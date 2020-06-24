@@ -1,0 +1,15 @@
+{
+  "name": "taskq",
+  "version": "0.0.0",
+  "description": "A PostgreSQL backed task queue for NodeJS",
+  "author": "Daniel Grant <hello@danielgrant.co>",
+  "license": "MIT",
+  "main": "index.js",
+  "bin": "./packages/pg-taskq/bin/taskq.sh",
+  "dependencies": {
+    "ejs": "^3.1.3",
+    "express": "^4.17.1",
+    "pg": "^8.2.1",
+    "sql-template-strings": "^2.2.2"
+  }
+}
