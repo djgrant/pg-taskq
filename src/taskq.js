@@ -44,13 +44,19 @@ class PgTaskQ {
       let messageStr;
       if (message === null) messageStr = "null";
       else if (message === undefined) messageStr = "undefined";
-      else messageStr = message.toString();
+      else {
+        try {
+          messageStr = JSON.stringify(message);
+        } catch {
+          messageStr = message.toString();
+        }
+      }
       this.log("debug")(messageStr);
       return this.pool
         .query(
           queries.appendLog({
             executionId,
-            message: `${message}\n`,
+            message: `${messageStr}\n`,
           })
         )
         .catch(this.log("error"));
