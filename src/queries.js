@@ -36,14 +36,16 @@ const insertTaskToExecuteAtDateTime = ({
 }) => sql`
     INSERT INTO taskq.tasks (name, params, parent_id, execute_at) 
     VALUES (${name}, ${params}, ${parentId}, ${executeAtDateTime})
-    ON CONFLICT ON CONSTRAINT tasks_name_execute_at_key DO UPDATE set params = EXCLUDED.params
+    ON CONFLICT ON CONSTRAINT tasks_name_execute_at_key 
+    DO UPDATE SET params = EXCLUDED.params, parent_id = EXCLUDED.parent_id
     RETURNING *;
 `;
 
 const insertTaskToExecuteIn = ({ name, params, executeIn, parentId }) => sql`
     INSERT INTO taskq.tasks (name, params, parent_id, execute_at) 
     VALUES (${name}, ${params}, ${parentId}, now() + ${executeIn}::interval)
-    ON CONFLICT ON CONSTRAINT tasks_name_execute_at_key DO UPDATE set params = EXCLUDED.params
+    ON CONFLICT ON CONSTRAINT tasks_name_execute_at_key
+    DO UPDATE SET params = EXCLUDED.params, parent_id = EXCLUDED.parent_id
     RETURNING *;
 `;
 
@@ -53,10 +55,11 @@ const insertTaskToExecuteTodayAt = ({
   executeTodayAt,
   parentId,
 }) => sql`
-INSERT INTO taskq.tasks (name, params, parent_id, execute_at) 
-VALUES (${name}, ${params}, ${parentId}, current_date + ${executeTodayAt}::time)
-ON CONFLICT ON CONSTRAINT tasks_name_execute_at_key DO UPDATE set params = EXCLUDED.params
-RETURNING *;
+    INSERT INTO taskq.tasks (name, params, parent_id, execute_at) 
+    VALUES (${name}, ${params}, ${parentId}, current_date + ${executeTodayAt}::time)
+    ON CONFLICT ON CONSTRAINT tasks_name_execute_at_key
+    DO UPDATE SET params = EXCLUDED.params, parent_id = EXCLUDED.parent_id
+    RETURNING *;
 `;
 
 const insertTaskToExecuteInSumOf = ({
@@ -67,7 +70,8 @@ const insertTaskToExecuteInSumOf = ({
 }) => sql`
     INSERT INTO taskq.tasks (name, params, parent_id, execute_at) 
     VALUES (${name}, ${params}, ${parentId}, ${datetime}::timestamp with time zone + ${interval}::interval)
-    ON CONFLICT ON CONSTRAINT tasks_name_execute_at_key DO UPDATE set params = EXCLUDED.params
+    ON CONFLICT ON CONSTRAINT tasks_name_execute_at_key
+    DO UPDATE SET params = EXCLUDED.params, parent_id = EXCLUDED.parent_id
     RETURNING *;
 `;
 
