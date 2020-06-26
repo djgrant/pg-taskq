@@ -11,6 +11,7 @@ const selectNextTask = ({ maxAttempts, backoffDelay, backoffDecay }) => sql`
     SELECT *
     FROM taskq.tasks_extended
     WHERE status != 'success'
+        AND status != 'running'
         AND locked = false
         AND attempts < ${maxAttempts}
         AND execute_at < now()
