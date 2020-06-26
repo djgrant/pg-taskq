@@ -58,6 +58,13 @@ BEGIN
 END
 $$ LANGUAGE plpgsql VOLATILE;
 
+CREATE FUNCTION taskq.on_task_upserted () RETURNS TRIGGER AS $$
+BEGIN
+    PERFORM pg_notify('taskq:upserted', row_to_json(NEW)::text);
+    RETURN NEW;
+END
+$$ LANGUAGE plpgsql VOLATILE;
+
 CREATE FUNCTION taskq.on_task_status_change () RETURNS TRIGGER AS $$ 
 DECLARE
     status varchar(10) := NEW.status;
@@ -78,6 +85,13 @@ AFTER INSERT ON taskq.tasks
 FOR EACH ROW
 EXECUTE PROCEDURE taskq.on_task_inserted ();
 
+CREATE TRIGGER on_task_upsert
+AFTER UPDATE ON taskq.tasks
+FOR EACH ROW 
+WHEN (
+    OLD.name = NEW.name AND OLD.execute_at = NEW.execute_at
+) 
+EXECUTE PROCEDURE taskq.on_task_upserted ();
 
 CREATE TRIGGER on_task_status_change
 AFTER UPDATE ON taskq.executions
@@ -91,3 +105,4 @@ CREATE TRIGGER on_task_running
 AFTER INSERT ON taskq.executions
 FOR EACH ROW
 EXECUTE PROCEDURE taskq.on_task_status_change ();
+

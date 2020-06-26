@@ -278,6 +278,11 @@ class TaskQ {
     this.on("pending", (task) => {
       this.log("info")(`Enqueued task "${task.name}" (task id: ${task.id})`);
     });
+    this.on("upsert", (task) => {
+      this.log("info")(
+        `Already enqueued task "${task.name}" (task id: ${task.id})`
+      );
+    });
   }
 }
 
