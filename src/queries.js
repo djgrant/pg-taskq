@@ -4,6 +4,7 @@ const listen = () => sql`
     LISTEN "taskq:failure"; 
     LISTEN "taskq:success"; 
     LISTEN "taskq:running";
+    LISTEN "taskq:pending";
 `;
 
 const selectNextTask = ({ maxAttempts, backoffDelay, backoffDecay }) => sql`
@@ -12,7 +13,7 @@ const selectNextTask = ({ maxAttempts, backoffDelay, backoffDecay }) => sql`
     WHERE status != 'success'
         AND locked = false
         AND attempts < ${maxAttempts}
-        AND scheduled_for < now()
+        AND execute_at < now()
         AND (
             last_executed IS NULL
             OR CASE WHEN ${backoffDecay} = 'exponential'
@@ -22,15 +23,51 @@ const selectNextTask = ({ maxAttempts, backoffDelay, backoffDecay }) => sql`
                 last_executed + (${backoffDelay}::interval * attempts) < now()
             END
         )
-    ORDER BY scheduled_for
+    ORDER BY execute_at
     LIMIT 1 FOR
     UPDATE SKIP LOCKED;
 `;
 
-const insertTask = ({ name, params, scheduledFor, parentId }) => sql`
-    INSERT INTO taskq.tasks (name, params, parent_id, scheduled_for) 
-    VALUES (${name}, ${params}, ${parentId}, ${scheduledFor})
-    ON CONFLICT ON CONSTRAINT tasks_name_scheduled_for_key DO UPDATE set params = EXCLUDED.params
+const insertTaskToExecuteAtDateTime = ({
+  name,
+  params,
+  executeAtDateTime,
+  parentId,
+}) => sql`
+    INSERT INTO taskq.tasks (name, params, parent_id, execute_at) 
+    VALUES (${name}, ${params}, ${parentId}, ${executeAtDateTime})
+    ON CONFLICT ON CONSTRAINT tasks_name_execute_at_key DO UPDATE set params = EXCLUDED.params
+    RETURNING *;
+`;
+
+const insertTaskToExecuteIn = ({ name, params, executeIn, parentId }) => sql`
+    INSERT INTO taskq.tasks (name, params, parent_id, execute_at) 
+    VALUES (${name}, ${params}, ${parentId}, now() + ${executeIn}::interval)
+    ON CONFLICT ON CONSTRAINT tasks_name_execute_at_key DO UPDATE set params = EXCLUDED.params
+    RETURNING *;
+`;
+
+const insertTaskToExecuteTodayAt = ({
+  name,
+  params,
+  executeTodayAt,
+  parentId,
+}) => sql`
+INSERT INTO taskq.tasks (name, params, parent_id, execute_at) 
+VALUES (${name}, ${params}, ${parentId}, current_date + ${executeTodayAt}::time)
+ON CONFLICT ON CONSTRAINT tasks_name_execute_at_key DO UPDATE set params = EXCLUDED.params
+RETURNING *;
+`;
+
+const insertTaskToExecuteInSumOf = ({
+  name,
+  params,
+  parentId,
+  executeInSumOf: { datetime, interval },
+}) => sql`
+    INSERT INTO taskq.tasks (name, params, parent_id, execute_at) 
+    VALUES (${name}, ${params}, ${parentId}, ${datetime}::timestamp with time zone + ${interval}::interval)
+    ON CONFLICT ON CONSTRAINT tasks_name_execute_at_key DO UPDATE set params = EXCLUDED.params
     RETURNING *;
 `;
 
@@ -74,7 +111,10 @@ const appendLog = ({ executionId, message }) => sql`
 module.exports = {
   listen,
   selectNextTask,
-  insertTask,
+  insertTaskToExecuteAtDateTime,
+  insertTaskToExecuteTodayAt,
+  insertTaskToExecuteIn,
+  insertTaskToExecuteInSumOf,
   insertExecution,
   updateExecutionSuccess,
   updateExecutionFailure,

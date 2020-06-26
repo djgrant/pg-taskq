@@ -1,11 +1,8 @@
 const { TaskQ } = require("../");
 
-const today = new Date();
-today.setHours(0, 0, 0, 0);
-
 const taskq = new TaskQ({
-  logLevel: "warn",
-  processQueueEvery: 1500,
+  logLevel: "debug",
+  processQueueEvery: 100,
   dependencies: {},
   maxAttempts: 2,
   backoffDelay: "10 seconds",
@@ -13,46 +10,49 @@ const taskq = new TaskQ({
 });
 
 taskq.schedule({
-  task: "daily-task",
-  executeAt: today,
-  executeAgainEvery: "1 day",
+  name: "daily-task",
+  executeTodayAt: "00:00",
+  params: {},
 });
 
-taskq.process("daily-task", async function ({ taskq }) {
-  const asyncTask = await taskq.enqueue({
-    task: "async-task",
-    params: {},
+taskq
+  .take("daily-task")
+  .onFirstAttempt(({ task }) => {
+    taskq.scheduleAgain(task, { add: "1 day" });
+  })
+  .onExecute(async ({ taskq }) => {
+    await taskq.enqueue({
+      name: "async-task",
+      params: {},
+    });
   });
 
-  asyncTask.on("failure", (task) => {
-    console.log("async-task failed!", task.params);
+taskq
+  .take("async-task")
+  .onExecute(async ({ log, params }) => {
+    log("Running task");
+    log(JSON.stringify(params));
+    await Promise.resolve();
+  })
+  .onSuccess(({ task, taskq }) => {
+    taskq.scheduleAgain(task, { executeIn: "15 seconds" });
+    taskq.schedule({
+      name: "deeply-nested-task",
+      executeIn: "1 min",
+    });
   });
 
-  asyncTask.on("success", () => {
-    taskq.enqueue({ task: "deeply-nested-task" });
+taskq
+  .take("deeply-nested-task")
+  .onExecute(() => {
+    console.log("Executing deeply nested task");
+  })
+  .onFailure(({ taskq }) => {
+    taskq.enqueue({ name: "email-me", params: { task, status: failure } });
   });
-});
 
-taskq.process("async-task", async function ({ log, params, taskq }) {
-  log("Running task");
-  log(JSON.stringify(params));
-  await Promise.resolve();
-});
-
-taskq.process("deeply-nested-task", () => {
-  throw new Error("task failed");
-});
-
-taskq.on("success", (task) => {
-  console.log(`Task "${task.name}" was successful`);
-});
-
-taskq.on("failure", (task) => {
-  console.log(`Task "${task.name}" failed`);
-});
-
-taskq.on("running", (task) => {
-  console.log(`Task "${task.name}" is running`);
-});
+taskq.on("success", (task) => {});
+taskq.on("failure", (task) => {});
+taskq.on("running", (task) => {});
 
 taskq.run();

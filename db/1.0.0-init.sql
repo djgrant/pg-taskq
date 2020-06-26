@@ -5,10 +5,9 @@ CREATE TABLE taskq.tasks (
     parent_id text,
     name text NOT NULL,
     params json NOT NULL,
-    scheduled_for timestamp with time zone NOT NULL,
+    execute_at timestamp with time zone NOT NULL,
     locked boolean NOT NULL DEFAULT FALSE,
-    repeat_every interval,
-    CONSTRAINT tasks_name_scheduled_for_key UNIQUE (name, scheduled_for)
+    CONSTRAINT tasks_name_execute_at_key UNIQUE (name, execute_at)
 );
 
 CREATE TABLE taskq.executions (
@@ -24,8 +23,7 @@ SELECT t.id,
     t.parent_id,
     t.name,
     t.params,
-    t.scheduled_for,
-    t.repeat_every,
+    t.execute_at,
     t.locked,
     (
         SELECT COALESCE(
@@ -46,19 +44,26 @@ SELECT t.id,
 	    LIMIT 1
     ) AS last_executed,
     (
-        SELECT count(*) AS count
+        SELECT count(*)::int
         FROM taskq.executions e
         WHERE e.task_id = t.id
     ) AS attempts
 FROM taskq.tasks t
 ORDER BY t.id;
 
-CREATE OR REPLACE FUNCTION taskq.on_task_status_change () RETURNS TRIGGER AS $$ 
+CREATE FUNCTION taskq.on_task_inserted () RETURNS TRIGGER AS $$
+BEGIN
+    PERFORM pg_notify('taskq:pending', row_to_json(NEW)::text);
+    RETURN NEW;
+END
+$$ LANGUAGE plpgsql VOLATILE;
+
+CREATE FUNCTION taskq.on_task_status_change () RETURNS TRIGGER AS $$ 
 DECLARE
     status varchar(10) := NEW.status;
     task text := (
         SELECT row_to_json(t) FROM (
-            SELECT * FROM taskq.tasks_extended WHERE id = NEW.task_id
+            SELECT *, NEW.id as execution_id FROM taskq.tasks_extended WHERE id = NEW.task_id
         ) t
     );
 BEGIN 
@@ -68,10 +73,21 @@ END;
 $$ LANGUAGE 'plpgsql' VOLATILE;
 
 
+CREATE TRIGGER on_task_inserted
+AFTER INSERT ON taskq.tasks
+FOR EACH ROW
+EXECUTE PROCEDURE taskq.on_task_inserted ();
+
+
 CREATE TRIGGER on_task_status_change
 AFTER UPDATE ON taskq.executions
 FOR EACH ROW 
 WHEN (
     OLD.status IS DISTINCT FROM NEW.status
 ) 
+EXECUTE PROCEDURE taskq.on_task_status_change ();
+
+CREATE TRIGGER on_task_running
+AFTER INSERT ON taskq.executions
+FOR EACH ROW
 EXECUTE PROCEDURE taskq.on_task_status_change ();
