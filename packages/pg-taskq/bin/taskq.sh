@@ -18,8 +18,8 @@ then
     $DIR/drop-schema.sh
     $DIR/create-schema.sh
 else
-    echo 'You must pass a command to taskq!'
-    echo 'taskq schema:create - create a taskq schema in your database'
-    echo 'taskq schema:drop - drop the taskq schema from your database'
-    echo 'taskq schema:recreate - runs schema:down then schema:up'
+    echo 'You need to pass a command to taskq!'
+    echo ' - taskq schema:create - create a taskq schema in your database'
+    echo ' - taskq schema:drop - drop the taskq schema from your database'
+    echo ' - taskq schema:recreate - runs schema:down then schema:up'
 fi
