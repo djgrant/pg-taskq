@@ -7,6 +7,7 @@ while [ -h "$SOURCE" ]; do # resolve $SOURCE until the file is no longer a symli
 done
 DIR="$( cd -P "$( dirname "$SOURCE" )" >/dev/null 2>&1 && pwd )"
 
+echo $DIR
 if [[ $1 == 'schema:create' ]]
 then
     $DIR/create-schema.sh
@@ -16,7 +17,7 @@ then
 elif [[ $1 == 'schema:recreate' ]]
 then
     $DIR/drop-schema.sh
-    $DIR/create-schema.sh
+    $DIR/create-schema.sh $DIR
 else
     echo 'You need to pass a command to taskq!'
     echo ' - taskq schema:create - create a taskq schema in your database'
