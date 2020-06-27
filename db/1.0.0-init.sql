@@ -4,7 +4,8 @@ CREATE TABLE taskq.tasks (
     id serial PRIMARY KEY,
     parent_id text,
     name text NOT NULL,
-    params json NOT NULL,
+    params json,
+    context json,
     execute_at timestamp with time zone NOT NULL,
     locked boolean NOT NULL DEFAULT FALSE,
     CONSTRAINT tasks_name_execute_at_key UNIQUE (name, execute_at)
@@ -23,6 +24,7 @@ SELECT t.id,
     t.parent_id,
     t.name,
     t.params,
+    t.context,
     t.execute_at,
     t.locked,
     (

@@ -52,83 +52,108 @@ class TaskQ {
             messageStr = message.toString();
           }
         }
-      }
-      this.log("debug")(messageStr);
-      return this.pool
-        .query(
-          queries.appendLog({
-            executionId,
-            message: `${messageStr}\n`,
-          })
-        )
-        .catch(this.log("error"));
+        this.log("debug")(messageStr);
+        return this.pool
+          .query(
+            queries.appendLog({
+              executionId,
+              message: `${messageStr}\n`,
+            })
+          )
+          .catch(this.log("error"));
+      });
     };
   }
 
-  take(taskName) {
+  take(taskNameOrTaskNames) {
+    const taskNames = Array.isArray(taskNameOrTaskNames)
+      ? taskNameOrTaskNames
+      : [taskNameOrTaskNames];
+
     const methods = {
       onFirstAttempt: (firstAttemptCallback) => {
         this.on("running", (updatedTask) => {
-          if (taskName !== updatedTask.name || updatedTask.attempts > 1) return;
-          firstAttemptCallback({
-            task: updatedTask,
-            taskq: this.createSubTaskQ({ parentTask: updatedTask }),
+          taskNames.forEach((taskName) => {
+            if (taskName !== updatedTask.name || updatedTask.attempts > 1)
+              return;
+            firstAttemptCallback({
+              task: updatedTask,
+              taskq: this.createSubTaskQ({ parentTask: updatedTask }),
+            });
           });
         });
         return methods;
       },
       onExecute: (executeCallback) => {
-        this.on("running", async (updatedTask) => {
-          if (taskName !== updatedTask.name) return;
+        this.on("running", (updatedTask) => {
+          taskNames.forEach(async (taskName) => {
+            if (taskName !== updatedTask.name) return;
 
-          const subTaskQ = this.createSubTaskQ({ parentTask: updatedTask });
-          const taskLogger = this.createTaskLogger({
-            executionId: updatedTask.execution_id,
-            taskName: updatedTask.name,
-          });
+            const dependencies =
+              typeof this.dependencies === "function"
+                ? this.dependencies(updatedTask)
+                : this.dependencies;
 
-          try {
-            await executeCallback({
-              ...this.dependencies,
-              taskq: subTaskQ,
-              task: updatedTask,
-              params: updatedTask.params,
-              log: taskLogger,
+            const subTaskQ = this.createSubTaskQ({ parentTask: updatedTask });
+            const taskLogger = this.createTaskLogger({
+              executionId: updatedTask.execution_id,
+              taskName: updatedTask.name,
             });
 
-            await this.pool
-              .query(
-                queries.updateExecutionSuccess({ id: updatedTask.execution_id })
-              )
-              .catch(this.log("error"));
-          } catch (err) {
-            await taskLogger(err.stack);
-            await this.pool.query(
-              queries.updateExecutionFailure({
-                id: updatedTask.execution_id,
-                maxAttempts: this.maxAttempts,
-              })
-            );
-          }
+            try {
+              await executeCallback({
+                ...dependencies,
+                context: updatedTask.context,
+                params: updatedTask.params,
+                taskq: subTaskQ,
+                task: updatedTask,
+                log: taskLogger,
+              });
+
+              await this.pool
+                .query(
+                  queries.updateExecutionSuccess({
+                    id: updatedTask.execution_id,
+                  })
+                )
+                .catch(this.log("error"));
+            } catch (err) {
+              await taskLogger(err.stack);
+              await this.pool.query(
+                queries.updateExecutionFailure({
+                  id: updatedTask.execution_id,
+                  maxAttempts: this.maxAttempts,
+                })
+              );
+            }
+          });
         });
         return methods;
       },
       onSuccess: (successCallback) => {
         this.on("success", (updatedTask) => {
-          if (taskName !== updatedTask.name) return;
-          successCallback({
-            task: updatedTask,
-            taskq: this.createSubTaskQ({ parentTask: updatedTask }),
+          taskNames.forEach((taskName) => {
+            if (taskName !== updatedTask.name) return;
+            successCallback({
+              context: updatedTask.context,
+              params: updatedTask.params,
+              task: updatedTask,
+              taskq: this.createSubTaskQ({ parentTask: updatedTask }),
+            });
           });
         });
         return methods;
       },
       onFailure: (failureCallback) => {
         this.on("failure", (updatedTask) => {
-          if (taskName !== updatedTask.name) return;
-          failureCallback({
-            task: updatedTask,
-            taskq: this.createSubTaskQ({ parentTask: updatedTask }),
+          taskNames.forEach((taskName) => {
+            if (taskName !== updatedTask.name) return;
+            failureCallback({
+              context: updatedTask.context,
+              params: updatedTask.params,
+              task: updatedTask,
+              taskq: this.createSubTaskQ({ parentTask: updatedTask }),
+            });
           });
         });
         return methods;
@@ -138,6 +163,9 @@ class TaskQ {
   }
 
   enqueue(task) {
+    if (typeof task === "string") {
+      task = { name: task };
+    }
     return this.insertTask({ ...task, executeAtDateTime: new Date() });
   }
 
@@ -152,6 +180,7 @@ class TaskQ {
     return this.insertTask({
       name: originalTask.name,
       params: originalTask.params,
+      context: originalTask.context,
       parentId: originalTask.parent_id,
       executeInSumOf: overrides.add && {
         datetime: originalTask.execute_at,
@@ -191,12 +220,13 @@ class TaskQ {
         `Task ${task.name} was not given a parameter for scheduling execution`
       );
     }
-
     await this.pool
       .query(
         insertQuery({
           ...task,
           params: task.params || {},
+          context:
+            task.context || (this.parentTask ? this.parentTask.context : {}),
           parentId:
             typeof task.parentId !== "undefined"
               ? task.parentId
