@@ -40,15 +40,17 @@ class PgTaskQ {
   }
 
   createTaskLogger({ executionId }) {
-    return (message) => {
-      let messageStr;
-      if (message === null) messageStr = "null";
-      else if (message === undefined) messageStr = "undefined";
-      else {
-        try {
-          messageStr = JSON.stringify(message);
-        } catch {
-          messageStr = message.toString();
+    return (...messages) => {
+      messages.forEach((message) => {
+        let messageStr;
+        if (message === null) messageStr = "null";
+        else if (message === undefined) messageStr = "undefined";
+        else {
+          try {
+            messageStr = JSON.stringify(message);
+          } catch {
+            messageStr = message.toString();
+          }
         }
       }
       this.log("debug")(messageStr);
