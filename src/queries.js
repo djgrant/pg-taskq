@@ -32,19 +32,26 @@ const selectNextTask = ({ maxAttempts, backoffDelay, backoffDecay }) => sql`
 const insertTaskToExecuteAtDateTime = ({
   name,
   params,
+  context,
   executeAtDateTime,
   parentId,
 }) => sql`
-    INSERT INTO taskq.tasks (name, params, parent_id, execute_at) 
-    VALUES (${name}, ${params}, ${parentId}, ${executeAtDateTime})
+    INSERT INTO taskq.tasks (name, params, context, parent_id, execute_at) 
+    VALUES (${name}, ${params}, ${context}, ${parentId}, ${executeAtDateTime})
     ON CONFLICT ON CONSTRAINT tasks_name_execute_at_key 
     DO UPDATE SET params = EXCLUDED.params, parent_id = EXCLUDED.parent_id
     RETURNING *;
 `;
 
-const insertTaskToExecuteIn = ({ name, params, executeIn, parentId }) => sql`
-    INSERT INTO taskq.tasks (name, params, parent_id, execute_at) 
-    VALUES (${name}, ${params}, ${parentId}, now() + ${executeIn}::interval)
+const insertTaskToExecuteIn = ({
+  name,
+  params,
+  context,
+  executeIn,
+  parentId,
+}) => sql`
+    INSERT INTO taskq.tasks (name, params, context, parent_id, execute_at) 
+    VALUES (${name}, ${params}, ${context}, ${parentId}, now() + ${executeIn}::interval)
     ON CONFLICT ON CONSTRAINT tasks_name_execute_at_key
     DO UPDATE SET params = EXCLUDED.params, parent_id = EXCLUDED.parent_id
     RETURNING *;
@@ -53,11 +60,12 @@ const insertTaskToExecuteIn = ({ name, params, executeIn, parentId }) => sql`
 const insertTaskToExecuteTodayAt = ({
   name,
   params,
+  context,
   executeTodayAt,
   parentId,
 }) => sql`
-    INSERT INTO taskq.tasks (name, params, parent_id, execute_at) 
-    VALUES (${name}, ${params}, ${parentId}, current_date + ${executeTodayAt}::time)
+    INSERT INTO taskq.tasks (name, params, context, parent_id, execute_at) 
+    VALUES (${name}, ${params}, ${context}, ${parentId}, current_date + ${executeTodayAt}::time)
     ON CONFLICT ON CONSTRAINT tasks_name_execute_at_key
     DO UPDATE SET params = EXCLUDED.params, parent_id = EXCLUDED.parent_id
     RETURNING *;
@@ -66,11 +74,12 @@ const insertTaskToExecuteTodayAt = ({
 const insertTaskToExecuteInSumOf = ({
   name,
   params,
+  context,
   parentId,
   executeInSumOf: { datetime, interval },
 }) => sql`
-    INSERT INTO taskq.tasks (name, params, parent_id, execute_at) 
-    VALUES (${name}, ${params}, ${parentId}, ${datetime}::timestamp with time zone + ${interval}::interval)
+    INSERT INTO taskq.tasks (name, params, context, parent_id, execute_at) 
+    VALUES (${name}, ${params}, ${context}, ${parentId}, ${datetime}::timestamp with time zone + ${interval}::interval)
     ON CONFLICT ON CONSTRAINT tasks_name_execute_at_key
     DO UPDATE SET params = EXCLUDED.params, parent_id = EXCLUDED.parent_id
     RETURNING *;
