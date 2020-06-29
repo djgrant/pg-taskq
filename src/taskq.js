@@ -42,6 +42,7 @@ class TaskQ {
   createTaskLogger({ executionId }) {
     return (...messages) => {
       messages.forEach((message) => {
+        this.log("debug")(message);
         let messageStr;
         if (message === null) messageStr = "null";
         else if (message === undefined) messageStr = "undefined";
@@ -52,7 +53,6 @@ class TaskQ {
             messageStr = message.toString();
           }
         }
-        this.log("debug")(messageStr);
         return this.pool
           .query(
             queries.appendLog({
