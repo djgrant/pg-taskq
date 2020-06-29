@@ -8,9 +8,11 @@
   "main": "index.js",
   "bin": "./packages/pg-taskq/bin/taskq.sh",
   "dependencies": {
+    "@djgrant/postgres-migrations": "^4.1.0-rc.1",
     "ejs": "^3.1.3",
     "express": "^4.17.1",
     "pg": "^8.2.1",
-    "sql-template-strings": "^2.2.2"
+    "sql-template-strings": "^2.2.2",
+    "yargs": "^15.3.1"
   }
 }

@@ -8,19 +8,19 @@ done
 DIR="$( cd -P "$( dirname "$SOURCE" )" >/dev/null 2>&1 && pwd )"
 
 echo $DIR
-if [[ $1 == 'schema:create' ]]
+if [[ $1 == 'migrate' ]]
 then
-    $DIR/create-schema.sh
-elif [[ $1 == 'schema:drop' ]]
-then
-    $DIR/drop-schema.sh
-elif [[ $1 == 'schema:recreate' ]]
+    $DIR/migrate.js $@
+elif [[ $1 == 'drop-schema' ]]
 then
     $DIR/drop-schema.sh
-    $DIR/create-schema.sh $DIR
+elif [[ $1 == 'recreate-schema' ]]
+then
+    $DIR/drop-schema.sh 
+    $DIR/migrate.js $DIR $@
 else
     echo 'You need to pass a command to taskq!'
-    echo ' - taskq schema:create - create a taskq schema in your database'
-    echo ' - taskq schema:drop - drop the taskq schema from your database'
-    echo ' - taskq schema:recreate - runs schema:down then schema:up'
+    echo ' - taskq migrate - on first run, creates a taskq schema in your database; thereafter applies database migrations to current version'
+    echo ' - taskq drop-schema - drops the taskq schema from your database'
+    echo ' - taskq recreate-schema - runs `drop-schema` then `migrate`'
 fi

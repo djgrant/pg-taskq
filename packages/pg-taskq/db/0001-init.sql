@@ -1,5 +1,3 @@
-CREATE SCHEMA taskq;
-
 CREATE TABLE taskq.tasks (
     id serial PRIMARY KEY,
     parent_id text,
