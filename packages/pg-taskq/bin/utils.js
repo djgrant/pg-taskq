@@ -4,6 +4,8 @@ const { argv } = require("yargs");
 const connectionString = argv.c || argv.connection;
 const schema = argv.s || argv.schema;
 
+const getSchema = () => (typeof schema === "string" ? schema : undefined);
+
 const getClient = () => {
   const clientOptions = connectionString && { connectionString };
   const client = new pg.Client(clientOptions);
@@ -13,6 +15,27 @@ const getClient = () => {
   return client;
 };
 
-const getSchema = () => schema;
+const logConnectedDb = (client) => {
+  const db = {
+    database: client.database,
+    schema: getSchema(),
+    user: client.user,
+    host: client.host,
+    port: client.port,
+  };
+  console.log("\nConnected to:", db);
+};
 
-module.exports = { getClient, getSchema };
+const getText = (client, schema) => {
+  return {
+    database: `database${schema ? " schema" : ""}`,
+    databaseName: `${client.database}${schema ? `.${schema}` : ""}`,
+  };
+};
+
+module.exports = {
+  getClient,
+  getSchema,
+  getText,
+  logConnectedDb,
+};

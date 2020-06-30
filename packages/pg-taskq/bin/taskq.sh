@@ -19,6 +19,6 @@ else
     echo '  taskq up      Sets up taskq tables/functions/triggers\n'
     echo '  taskq clear   Permanently removes all tasks\n'
     echo 'Options:\n'
-    echo '  --schema, -s       A schema to create/write to\n'
-    echo '  --connection, -c   A Postgres connection string/URL\n'
+    echo '  --schema, -s         A Postgres schema. Will be created if does not already exist\n'
+    echo '  --connection, -c     A Postgres connection string\n'
 fi
