@@ -7,6 +7,7 @@ const taskq = new TaskQ({
   maxAttempts: 2,
   backoffDelay: "10 seconds",
   backoffDecay: "linear",
+  schema: "taskq",
 });
 
 taskq.schedule({

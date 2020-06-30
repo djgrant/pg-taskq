@@ -22,6 +22,12 @@ class TaskQ {
     this.backoffDelay = opts.backoffDelay || "20 seconds";
     this.backoffDecay = opts.backoffDecay || "exponential";
     this.logger = opts.logger || console.log;
+
+    if (opts.schema) {
+      this.pool.on("connect", (client) =>
+        client.query(`SET search_path TO ${opts.schema}`)
+      );
+    }
   }
 
   on(event, subscriber) {

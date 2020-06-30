@@ -8,19 +8,17 @@ done
 DIR="$( cd -P "$( dirname "$SOURCE" )" >/dev/null 2>&1 && pwd )"
 
 echo $DIR
-if [[ $1 == 'migrate' ]]
+if [[ $1 == 'up' ]]
 then
-    $DIR/migrate.js $@
-elif [[ $1 == 'drop-schema' ]]
+    $DIR/up.js $@
+elif [[ $1 == 'clear' ]]
 then
-    $DIR/drop-schema.sh
-elif [[ $1 == 'recreate-schema' ]]
-then
-    $DIR/drop-schema.sh 
-    $DIR/migrate.js $DIR $@
+    $DIR/clear.js $@
 else
-    echo 'You need to pass a command to taskq!'
-    echo ' - taskq migrate - on first run, creates a taskq schema in your database; thereafter applies database migrations to current version'
-    echo ' - taskq drop-schema - drops the taskq schema from your database'
-    echo ' - taskq recreate-schema - runs `drop-schema` then `migrate`'
+    echo '\nYou must supply a command:\n'
+    echo '  taskq up      Sets up taskq tables/functions/triggers\n'
+    echo '  taskq clear   Permanently removes all tasks\n'
+    echo 'Options:\n'
+    echo '  --schema, -s       A schema to create/write to\n'
+    echo '  --connection, -c   A Postgres connection string/URL\n'
 fi

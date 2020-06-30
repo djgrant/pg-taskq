@@ -9,7 +9,7 @@ const listen = () => sql`
 
 const selectNextTask = ({ maxAttempts, backoffDelay, backoffDecay }) => sql`
     SELECT *
-    FROM taskq.tasks_extended
+    FROM tasks_extended
     WHERE status != 'success'
         AND status != 'running'
         AND locked = false
@@ -36,7 +36,7 @@ const insertTaskToExecuteAtDateTime = ({
   executeAtDateTime,
   parentId,
 }) => sql`
-    INSERT INTO taskq.tasks (name, params, context, parent_id, execute_at) 
+    INSERT INTO tasks (name, params, context, parent_id, execute_at) 
     VALUES (${name}, ${params}, ${context}, ${parentId}, ${executeAtDateTime})
     ON CONFLICT ON CONSTRAINT tasks_name_execute_at_key 
     DO UPDATE SET params = EXCLUDED.params, parent_id = EXCLUDED.parent_id
@@ -50,7 +50,7 @@ const insertTaskToExecuteIn = ({
   executeIn,
   parentId,
 }) => sql`
-    INSERT INTO taskq.tasks (name, params, context, parent_id, execute_at) 
+    INSERT INTO tasks (name, params, context, parent_id, execute_at) 
     VALUES (${name}, ${params}, ${context}, ${parentId}, now() + ${executeIn}::interval)
     ON CONFLICT ON CONSTRAINT tasks_name_execute_at_key
     DO UPDATE SET params = EXCLUDED.params, parent_id = EXCLUDED.parent_id
@@ -64,7 +64,7 @@ const insertTaskToExecuteTodayAt = ({
   executeTodayAt,
   parentId,
 }) => sql`
-    INSERT INTO taskq.tasks (name, params, context, parent_id, execute_at) 
+    INSERT INTO tasks (name, params, context, parent_id, execute_at) 
     VALUES (${name}, ${params}, ${context}, ${parentId}, current_date + ${executeTodayAt}::time)
     ON CONFLICT ON CONSTRAINT tasks_name_execute_at_key
     DO UPDATE SET params = EXCLUDED.params, parent_id = EXCLUDED.parent_id
@@ -78,7 +78,7 @@ const insertTaskToExecuteInSumOf = ({
   parentId,
   executeInSumOf: { datetime, interval },
 }) => sql`
-    INSERT INTO taskq.tasks (name, params, context, parent_id, execute_at) 
+    INSERT INTO tasks (name, params, context, parent_id, execute_at) 
     VALUES (${name}, ${params}, ${context}, ${parentId}, ${datetime}::timestamp with time zone + ${interval}::interval)
     ON CONFLICT ON CONSTRAINT tasks_name_execute_at_key
     DO UPDATE SET params = EXCLUDED.params, parent_id = EXCLUDED.parent_id
@@ -86,38 +86,38 @@ const insertTaskToExecuteInSumOf = ({
 `;
 
 const insertExecution = ({ taskId }) => sql`
-    INSERT INTO taskq.executions (task_id)
+    INSERT INTO executions (task_id)
     VALUES (${taskId})
     RETURNING id
 `;
 
 const updateExecutionSuccess = ({ id }) => sql`
     WITH updated AS (
-        UPDATE taskq.executions
+        UPDATE executions
         SET status = 'success'
         WHERE id = ${id}
         RETURNING task_id
     )
-    UPDATE taskq.tasks
+    UPDATE tasks
     SET locked = true
     WHERE id = ( SELECT task_id FROM updated);
 `;
 
 const updateExecutionFailure = ({ id, maxAttempts }) => sql`
     WITH updated AS (
-        UPDATE taskq.executions
+        UPDATE executions
         SET status = 'failure'
         WHERE id = ${id}
         RETURNING task_id
     )
-    UPDATE taskq.tasks
+    UPDATE tasks
     SET locked = true
     WHERE id = ( SELECT task_id FROM updated) 
-    AND ( SELECT attempts FROM taskq.tasks_extended WHERE id = ( SELECT task_id FROM updated) ) >= ${maxAttempts};
+    AND ( SELECT attempts FROM tasks_extended WHERE id = ( SELECT task_id FROM updated) ) >= ${maxAttempts};
 `;
 
 const appendLog = ({ executionId, message }) => sql`
-    UPDATE taskq.executions
+    UPDATE executions
     SET logs = CONCAT(logs, ${message}::text)
     WHERE id = ${executionId}
 `;
