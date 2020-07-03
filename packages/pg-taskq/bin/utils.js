@@ -1,24 +1,28 @@
 const pg = require("pg");
 const { argv } = require("yargs");
 
-const connectionString = argv.c || argv.connection;
-const schema = argv.s || argv.schema;
+const ensureString = (str) => (typeof str === "string" ? str : undefined);
 
-const getSchema = () => (typeof schema === "string" ? schema : undefined);
-
-const getClient = () => {
-  const clientOptions = connectionString && { connectionString };
-  const client = new pg.Client(clientOptions);
-  if (schema) {
-    client.on("connect", () => client.query(`SET search_path TO ${schema}`));
-  }
-  return client;
+const args = {
+  connectionString: ensureString(argv.c || argv.connection),
+  schema: ensureString(argv.s || argv.schema),
+  force: Boolean(argv.f || argv.force),
 };
+
+const clientOptions = args.connectionString && {
+  connectionString: args.connectionString,
+};
+
+const client = new pg.Client(clientOptions);
+
+if (args.schema) {
+  client.on("connect", () => client.query(`SET search_path TO ${args.schema}`));
+}
 
 const logConnectedDb = (client) => {
   const db = {
     database: client.database,
-    schema: getSchema(),
+    schema: args.schema,
     user: client.user,
     host: client.host,
     port: client.port,
@@ -26,16 +30,14 @@ const logConnectedDb = (client) => {
   console.log("\nConnected to:", db);
 };
 
-const getText = (client, schema) => {
-  return {
-    database: `database${schema ? " schema" : ""}`,
-    databaseName: `${client.database}${schema ? `.${schema}` : ""}`,
-  };
+const text = {
+  database: `database${args.schema ? " schema" : ""}`,
+  databaseName: `${client.database}${args.schema ? `.${args.schema}` : ""}`,
 };
 
 module.exports = {
-  getClient,
-  getSchema,
-  getText,
+  args,
+  client,
+  text,
   logConnectedDb,
 };
