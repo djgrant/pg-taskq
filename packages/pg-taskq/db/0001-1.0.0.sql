@@ -2,11 +2,11 @@ CREATE TABLE tasks (
     id serial PRIMARY KEY,
     parent_id text,
     name text NOT NULL,
-    params json,
-    context json,
+    params jsonb,
+    context jsonb,
     execute_at timestamp with time zone NOT NULL,
     locked boolean NOT NULL DEFAULT FALSE,
-    CONSTRAINT tasks_name_execute_at_key UNIQUE (name, execute_at)
+    CONSTRAINT tasks_unique_key UNIQUE (name, params, context, execute_at)
 );
 
 CREATE TABLE executions (
@@ -27,14 +27,14 @@ SELECT t.id,
     t.locked,
     (
         SELECT COALESCE(
-                (
-                    SELECT e.status
-                    FROM executions e
-                    WHERE e.task_id = t.id
-                    ORDER BY e.started_at DESC
-                    LIMIT 1
-                ), 'pending'::character varying
-            ) AS status
+            (
+                SELECT e.status
+                FROM executions e
+                WHERE e.task_id = t.id
+                ORDER BY e.started_at DESC
+                LIMIT 1
+            ), 'pending'::character varying
+        ) AS status
     ) AS status,
     (
 	    SELECT e.started_at

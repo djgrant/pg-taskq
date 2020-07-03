@@ -38,7 +38,7 @@ const insertTaskToExecuteAtDateTime = ({
 }) => sql`
     INSERT INTO tasks (name, params, context, parent_id, execute_at) 
     VALUES (${name}, ${params}, ${context}, ${parentId}, ${executeAtDateTime})
-    ON CONFLICT ON CONSTRAINT tasks_name_execute_at_key 
+    ON CONFLICT ON CONSTRAINT tasks_unique_key 
     DO UPDATE SET params = EXCLUDED.params, parent_id = EXCLUDED.parent_id
     RETURNING *;
 `;
@@ -52,7 +52,7 @@ const insertTaskToExecuteIn = ({
 }) => sql`
     INSERT INTO tasks (name, params, context, parent_id, execute_at) 
     VALUES (${name}, ${params}, ${context}, ${parentId}, now() + ${executeIn}::interval)
-    ON CONFLICT ON CONSTRAINT tasks_name_execute_at_key
+    ON CONFLICT ON CONSTRAINT tasks_unique_key
     DO UPDATE SET params = EXCLUDED.params, parent_id = EXCLUDED.parent_id
     RETURNING *;
 `;
@@ -66,7 +66,7 @@ const insertTaskToExecuteTodayAt = ({
 }) => sql`
     INSERT INTO tasks (name, params, context, parent_id, execute_at) 
     VALUES (${name}, ${params}, ${context}, ${parentId}, current_date + ${executeTodayAt}::time)
-    ON CONFLICT ON CONSTRAINT tasks_name_execute_at_key
+    ON CONFLICT ON CONSTRAINT tasks_unique_key
     DO UPDATE SET params = EXCLUDED.params, parent_id = EXCLUDED.parent_id
     RETURNING *;
 `;
@@ -80,7 +80,7 @@ const insertTaskToExecuteInSumOf = ({
 }) => sql`
     INSERT INTO tasks (name, params, context, parent_id, execute_at) 
     VALUES (${name}, ${params}, ${context}, ${parentId}, ${datetime}::timestamp with time zone + ${interval}::interval)
-    ON CONFLICT ON CONSTRAINT tasks_name_execute_at_key
+    ON CONFLICT ON CONSTRAINT tasks_unique_key
     DO UPDATE SET params = EXCLUDED.params, parent_id = EXCLUDED.parent_id
     RETURNING *;
 `;
