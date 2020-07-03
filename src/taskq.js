@@ -4,7 +4,7 @@ const queries = require("./queries");
 
 process.on("unhandledRejection", (reason) => {
   console.log(reason);
-  process.exit();
+  process.exit(1);
 });
 
 class TaskQ {
@@ -76,6 +76,8 @@ class TaskQ {
       ? taskNameOrTaskNames
       : [taskNameOrTaskNames];
 
+    const onExecute = makeOnExecute.apply(this);
+
     const methods = {
       onFirstAttempt: (firstAttemptCallback) => {
         this.on("running", (updatedTask) => {
@@ -121,52 +123,54 @@ class TaskQ {
       },
     };
 
-    const onExecute = (executeCallback) => {
-      this.on("running", (updatedTask) => {
-        taskNames.forEach(async (taskName) => {
-          if (taskName !== updatedTask.name) return;
+    function makeOnExecute() {
+      return (executeCallback) => {
+        this.on("running", (updatedTask) => {
+          taskNames.forEach(async (taskName) => {
+            if (taskName !== updatedTask.name) return;
 
-          const dependencies =
-            typeof this.dependencies === "function"
-              ? this.dependencies(updatedTask)
-              : this.dependencies;
+            const dependencies =
+              typeof this.dependencies === "function"
+                ? this.dependencies(updatedTask)
+                : this.dependencies;
 
-          const subTaskQ = this.createSubTaskQ({ parentTask: updatedTask });
-          const taskLogger = this.createTaskLogger({
-            executionId: updatedTask.execution_id,
-            taskName: updatedTask.name,
-          });
-
-          try {
-            await executeCallback({
-              ...dependencies,
-              context: updatedTask.context,
-              params: updatedTask.params,
-              taskq: subTaskQ,
-              task: updatedTask,
-              log: taskLogger,
+            const subTaskQ = this.createSubTaskQ({ parentTask: updatedTask });
+            const taskLogger = this.createTaskLogger({
+              executionId: updatedTask.execution_id,
+              taskName: updatedTask.name,
             });
 
-            await this.pool
-              .query(
-                queries.updateExecutionSuccess({
+            try {
+              await executeCallback({
+                ...dependencies,
+                context: updatedTask.context,
+                params: updatedTask.params,
+                taskq: subTaskQ,
+                task: updatedTask,
+                log: taskLogger,
+              });
+
+              await this.pool
+                .query(
+                  queries.updateExecutionSuccess({
+                    id: updatedTask.execution_id,
+                  })
+                )
+                .catch(this.log("error"));
+            } catch (err) {
+              await taskLogger(err.stack);
+              await this.pool.query(
+                queries.updateExecutionFailure({
                   id: updatedTask.execution_id,
+                  maxAttempts: this.maxAttempts,
                 })
-              )
-              .catch(this.log("error"));
-          } catch (err) {
-            await taskLogger(err.stack);
-            await this.pool.query(
-              queries.updateExecutionFailure({
-                id: updatedTask.execution_id,
-                maxAttempts: this.maxAttempts,
-              })
-            );
-          }
+              );
+            }
+          });
         });
-      });
-      return methods;
-    };
+        return methods;
+      };
+    }
 
     if (executeCallback) {
       return onExecute(executeCallback);
@@ -260,13 +264,24 @@ class TaskQ {
       this.log("error")(err);
       process.exit(1);
     });
-    setInterval(() => {
+    this.interval = setInterval(() => {
       if (this.processingQueue) return;
       this.processQueue().catch((err) => {
         this.log("error")("Failed to process queue");
         this.log("error")(err);
       });
     }, this.processQueueEvery);
+  }
+
+  stop() {
+    if (this.running) {
+      clearInterval(this.interval);
+      this.processingQueue === false;
+      this.notificationClient.end();
+      this.pool.end();
+    } else {
+      console.log("Can't stop TaskQ. Not currently running.");
+    }
   }
 
   async processQueue() {
@@ -287,16 +302,20 @@ class TaskQ {
       return;
     }
 
-    await this.pool
-      .query(queries.insertExecution({ taskId: taskToProcess.id }))
-      .catch(this.log("error"));
+    (async () => {
+      if (!this.processingQueue) return;
+      await this.pool
+        .query(queries.insertExecution({ taskId: taskToProcess.id }))
+        .catch(this.log("error"));
+    })();
 
-    this.processQueue();
+    if (this.processingQueue) {
+      this.processQueue();
+    }
   }
 
   async setUpEventListeners() {
-    const client = await this.pool.connect();
-
+    const client = (this.notificationClient = await this.pool.connect());
     await client.query(queries.listen());
     client.on("notification", ({ channel, payload }) => {
       let parsedPayload = payload;
