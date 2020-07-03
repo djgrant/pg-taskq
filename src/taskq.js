@@ -71,7 +71,7 @@ class PgTaskQ {
     };
   }
 
-  take(taskNameOrTaskNames) {
+  take(taskNameOrTaskNames, executeCallback) {
     const taskNames = Array.isArray(taskNameOrTaskNames)
       ? taskNameOrTaskNames
       : [taskNameOrTaskNames];
@@ -90,52 +90,7 @@ class PgTaskQ {
         });
         return methods;
       },
-      onExecute: (executeCallback) => {
-        this.on("running", (updatedTask) => {
-          taskNames.forEach(async (taskName) => {
-            if (taskName !== updatedTask.name) return;
-
-            const dependencies =
-              typeof this.dependencies === "function"
-                ? this.dependencies(updatedTask)
-                : this.dependencies;
-
-            const subTaskQ = this.createSubTaskQ({ parentTask: updatedTask });
-            const taskLogger = this.createTaskLogger({
-              executionId: updatedTask.execution_id,
-              taskName: updatedTask.name,
-            });
-
-            try {
-              await executeCallback({
-                ...dependencies,
-                context: updatedTask.context,
-                params: updatedTask.params,
-                taskq: subTaskQ,
-                task: updatedTask,
-                log: taskLogger,
-              });
-
-              await this.pool
-                .query(
-                  queries.updateExecutionSuccess({
-                    id: updatedTask.execution_id,
-                  })
-                )
-                .catch(this.log("error"));
-            } catch (err) {
-              await taskLogger(err.stack);
-              await this.pool.query(
-                queries.updateExecutionFailure({
-                  id: updatedTask.execution_id,
-                  maxAttempts: this.maxAttempts,
-                })
-              );
-            }
-          });
-        });
-        return methods;
-      },
+      onExecute,
       onSuccess: (successCallback) => {
         this.on("success", (updatedTask) => {
           taskNames.forEach((taskName) => {
@@ -165,12 +120,64 @@ class PgTaskQ {
         return methods;
       },
     };
+
+    const onExecute = (executeCallback) => {
+      this.on("running", (updatedTask) => {
+        taskNames.forEach(async (taskName) => {
+          if (taskName !== updatedTask.name) return;
+
+          const dependencies =
+            typeof this.dependencies === "function"
+              ? this.dependencies(updatedTask)
+              : this.dependencies;
+
+          const subTaskQ = this.createSubTaskQ({ parentTask: updatedTask });
+          const taskLogger = this.createTaskLogger({
+            executionId: updatedTask.execution_id,
+            taskName: updatedTask.name,
+          });
+
+          try {
+            await executeCallback({
+              ...dependencies,
+              context: updatedTask.context,
+              params: updatedTask.params,
+              taskq: subTaskQ,
+              task: updatedTask,
+              log: taskLogger,
+            });
+
+            await this.pool
+              .query(
+                queries.updateExecutionSuccess({
+                  id: updatedTask.execution_id,
+                })
+              )
+              .catch(this.log("error"));
+          } catch (err) {
+            await taskLogger(err.stack);
+            await this.pool.query(
+              queries.updateExecutionFailure({
+                id: updatedTask.execution_id,
+                maxAttempts: this.maxAttempts,
+              })
+            );
+          }
+        });
+      });
+      return methods;
+    };
+
+    if (executeCallback) {
+      return onExecute(executeCallback);
+    }
+
     return methods;
   }
 
-  enqueue(task) {
+  enqueue(task, params) {
     if (typeof task === "string") {
-      task = { name: task };
+      task = { name: task, params };
     }
     return this.insertTask({ ...task, executeAtDateTime: new Date() });
   }
