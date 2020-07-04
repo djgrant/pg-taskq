@@ -7,26 +7,30 @@ const listen = () => sql`
     LISTEN "taskq:pending";
 `;
 
-const selectNextTask = ({ maxAttempts, backoffDelay, backoffDecay }) => sql`
-    SELECT *
-    FROM tasks_extended
-    WHERE status != 'success'
-        AND status != 'running'
-        AND locked = false
-        AND attempts < ${maxAttempts}
-        AND execute_at < now()
-        AND (
-            last_executed IS NULL
-            OR CASE WHEN ${backoffDecay} = 'exponential'
-            THEN
-                last_executed + (${backoffDelay}::interval * attempts * attempts) < now()
-            ELSE
-                last_executed + (${backoffDelay}::interval * attempts) < now()
-            END
-        )
-    ORDER BY execute_at
-    LIMIT 1 FOR
-    UPDATE SKIP LOCKED;
+const processNextTask = ({ maxAttempts, backoffDelay, backoffDecay }) => sql`
+    WITH next_tasks AS (
+        SELECT id
+        FROM tasks_extended
+        WHERE status != 'success'
+            AND status != 'running'
+            AND locked = false
+            AND attempts < ${maxAttempts}
+            AND execute_at < now()
+            AND (
+                last_executed IS NULL
+                OR CASE WHEN ${backoffDecay} = 'exponential'
+                THEN
+                    last_executed + (${backoffDelay}::interval * attempts * attempts) < now()
+                ELSE
+                    last_executed + (${backoffDelay}::interval * attempts) < now()
+                END
+            )
+        ORDER BY execute_at
+        FOR UPDATE SKIP LOCKED
+    )
+    INSERT INTO executions (task_id)
+    SELECT id FROM next_tasks LIMIT 1
+    RETURNING id;
 `;
 
 const insertTaskToExecuteAtDateTime = ({
@@ -85,12 +89,6 @@ const insertTaskToExecuteInSumOf = ({
     RETURNING *;
 `;
 
-const insertExecution = ({ taskId }) => sql`
-    INSERT INTO executions (task_id)
-    VALUES (${taskId})
-    RETURNING id
-`;
-
 const updateExecutionSuccess = ({ id }) => sql`
     WITH updated AS (
         UPDATE executions
@@ -124,12 +122,11 @@ const appendLog = ({ executionId, message }) => sql`
 
 module.exports = {
   listen,
-  selectNextTask,
+  processNextTask,
   insertTaskToExecuteAtDateTime,
   insertTaskToExecuteTodayAt,
   insertTaskToExecuteIn,
   insertTaskToExecuteInSumOf,
-  insertExecution,
   updateExecutionSuccess,
   updateExecutionFailure,
   appendLog,
