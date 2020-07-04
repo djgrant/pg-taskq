@@ -4,7 +4,7 @@ CREATE TABLE tasks (
     name text NOT NULL,
     params jsonb,
     context jsonb,
-    execute_at timestamp with time zone NOT NULL,
+    execute_at timestamp with time zone NOT NULL DEFAULT now(),
     locked boolean NOT NULL DEFAULT FALSE,
     CONSTRAINT tasks_unique_key UNIQUE (name, params, context, execute_at)
 );
