@@ -30,10 +30,10 @@ it("Runs migrations", async () => {
 });
 
 it("Runs migrations in a provided schema", async () => {
-  await exec(`./packages/pg-taskq/bin/up.js -f -c ${connectionString} -s taskq`);
+  await exec(`./packages/pg-taskq/bin/up.js -f -c ${connectionString} -s schema_test`);
   const result = await client.query(`
     SELECT table_name FROM information_schema.tables 
-    WHERE table_schema = 'taskq'
+    WHERE table_schema = 'schema_test'
   `);
   expect(result.rows.map((table) => table.table_name)).toEqual([
     "migrations",
@@ -57,12 +57,12 @@ it("Clears the tasks queue", async () => {
 
 it("Clears the tasks queue from a provided schema", async () => {
   await client.query(`
-    INSERT INTO taskq.tasks ("name") VALUES ('Test Task');
-    INSERT INTO taskq.executions ("task_id") VALUES (1);
+    INSERT INTO schema_test.tasks ("name") VALUES ('Test Task');
+    INSERT INTO schema_test.executions ("task_id") VALUES (1);
   `);
-  await exec(`./packages/pg-taskq/bin/clear.js -f -c ${connectionString} -s taskq`);
+  await exec(`./packages/pg-taskq/bin/clear.js -f -c ${connectionString} -s schema_test`);
   const result = await client.query(
-    `SELECT t.*, e.* FROM taskq.tasks t, taskq.executions e`
+    `SELECT t.*, e.* FROM schema_test.tasks t, schema_test.executions e`
   );
   expect(result.rowCount).toEqual(0);
 });
