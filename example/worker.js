@@ -2,7 +2,7 @@ const { TaskQ } = require("../");
 
 const taskq = new TaskQ({
   logLevel: "debug",
-  processQueueEvery: 100,
+  processQueueEvery: 2000,
   dependencies: {},
   maxAttempts: 2,
   backoffDelay: "10 seconds",
@@ -15,6 +15,8 @@ taskq.schedule({
   executeTodayAt: "00:00",
   params: {},
 });
+
+taskq.enqueue("test task");
 
 taskq
   .take("daily-task")
@@ -56,4 +58,4 @@ taskq.on("success", (task) => {});
 taskq.on("failure", (task) => {});
 taskq.on("running", (task) => {});
 
-taskq.run();
+taskq.start();

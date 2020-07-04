@@ -10,18 +10,19 @@ process.on("unhandledRejection", (reason) => {
 class TaskQ {
   constructor(opts) {
     this.dependencies = opts.dependencies || {};
-    this.processingQueue = opts.processingQueue || false;
     this.processQueueEvery = opts.processQueueEvery || 5000;
     this.parentTask = opts.parentTask || null;
     this.logs = opts.logs || {};
     this.pool = opts.pool || new Pool(opts.db);
-    this.running = opts.running || false;
+    this.started = opts.started || false;
     this.subscribers = opts.subscribers || [];
     this.logLevel = opts.logLevel || "warn";
     this.maxAttempts = opts.maxAttempts || 1;
     this.backoffDelay = opts.backoffDelay || "20 seconds";
     this.backoffDecay = opts.backoffDecay || "exponential";
     this.logger = opts.logger || console.log;
+    this.processingQueue = false;
+    this.processingPromise = Promise.resolve();
 
     if (opts.schema) {
       this.pool.on("connect", (client) =>
@@ -254,63 +255,54 @@ class TaskQ {
       .catch(this.log("error"));
   }
 
-  run() {
-    if (this.running) {
+  start() {
+    if (this.started) {
       throw new Error("taskq.run() should only be invoked once per process");
     }
-    this.running = true;
+    this.started = true;
     this.setUpInfoLogging();
     this.setUpEventListeners().catch((err) => {
       this.log("error")(err);
       process.exit(1);
     });
-    this.interval = setInterval(() => {
-      if (this.processingQueue) return;
-      this.processQueue().catch((err) => {
-        this.log("error")("Failed to process queue");
-        this.log("error")(err);
-      });
-    }, this.processQueueEvery);
-  }
 
-  stop() {
-    if (this.running) {
-      clearInterval(this.interval);
-      this.processingQueue === false;
-      this.notificationClient.end();
-      this.pool.end();
-    } else {
-      console.log("Can't stop TaskQ. Not currently running.");
-    }
+    let failures = 0;
+
+    const ticker = () => {
+      if (!this.started) return;
+      this.processingPromise = this.processQueue()
+        .then(() => {
+          failures = 0;
+          setTimeout(ticker, this.processQueueEvery);
+        })
+        .catch((err) => {
+          this.log("error")(err);
+          if (++failures > 2) {
+            process.exit(1);
+          } else {
+            this.log("error")("Failed to process queue. Retrying...");
+          }
+          setTimeout(ticker, this.processQueueEvery);
+        });
+    };
+
+    ticker();
   }
 
   async processQueue() {
-    this.processingQueue = true;
-    const {
-      rows: [taskToProcess],
-      rowCount: taskRowCount,
-    } = await this.pool.query(
-      queries.selectNextTask({
-        maxAttempts: this.maxAttempts,
-        backoffDelay: this.backoffDelay,
-        backoffDecay: this.backoffDecay,
-      })
-    );
-
-    if (taskRowCount === 0) {
-      this.processingQueue = false;
-      return;
-    }
-
-    (async () => {
-      if (!this.processingQueue) return;
-      await this.pool
-        .query(queries.insertExecution({ taskId: taskToProcess.id }))
-        .catch(this.log("error"));
-    })();
-
-    if (this.processingQueue) {
-      this.processQueue();
+    try {
+      const { rows } = await this.pool.query(
+        queries.processNextTask({
+          maxAttempts: this.maxAttempts,
+          backoffDelay: this.backoffDelay,
+          backoffDecay: this.backoffDecay,
+        })
+      );
+      if (this.started && rows.length) {
+        await this.processQueue();
+      }
+    } catch (err) {
+      this.log("error")(err);
     }
   }
 
@@ -353,6 +345,17 @@ class TaskQ {
         `Already enqueued task "${task.name}" (task id: ${task.id})`
       );
     });
+  }
+
+  async stop() {
+    if (this.started) {
+      this.started = false;
+      await this.processingPromise.catch();
+      this.notificationClient.end();
+      this.pool.end();
+    } else {
+      console.log("Can't stop TaskQ. Not currently running.");
+    }
   }
 }
 
