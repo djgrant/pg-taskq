@@ -1,5 +1,5 @@
 const { Pool } = require("pg");
-const { getLogLevel } = require("./utils");
+const { getLogLevel, getStartOfToday } = require("./utils");
 const queries = require("./queries");
 
 process.on("unhandledRejection", (reason) => {
@@ -10,7 +10,7 @@ process.on("unhandledRejection", (reason) => {
 class TaskQ {
   constructor(opts) {
     this.dependencies = opts.dependencies || {};
-    this.processQueueEvery = opts.processQueueEvery || 5000;
+    this.processQueueEvery = opts.processQueueEvery || 1000;
     this.parentTask = opts.parentTask || null;
     this.logs = opts.logs || {};
     this.pool = opts.pool || new Pool(opts.db);
@@ -222,7 +222,11 @@ class TaskQ {
     }
     if (task.executeTodayAt) {
       executionParameters += 1;
-      insertQuery = queries.insertTaskToExecuteTodayAt;
+      insertQuery = queries.insertTaskToExecuteInSumOf;
+      task.executeInSumOf = {
+        datetime: getStartOfToday(),
+        interval: task.executeTodayAt,
+      };
     }
     if (task.executeAtDateTime) {
       executionParameters += 1;
@@ -230,15 +234,17 @@ class TaskQ {
     }
     if (executionParameters > 1) {
       this.log("warn")(
-        `Task ${task.name} has conflicting parameters for scheduling execution. Choose one of executeAt|executeIn|executeInSumOf.`
+        `Task ${task.name} has conflicting parameters for scheduling execution. Choose one of executeAt|executeIn|executeTodayAt.`
       );
     }
+
     if (executionParameters < 1) {
       throw new Error(
         `Task ${task.name} was not given a parameter for scheduling execution`
       );
     }
-    await this.pool
+
+    return await this.pool
       .query(
         insertQuery({
           ...task,

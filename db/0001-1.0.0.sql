@@ -1,6 +1,6 @@
 CREATE TABLE tasks (
     id serial PRIMARY KEY,
-    parent_id text,
+    parent_id integer,
     name text NOT NULL,
     params jsonb,
     context jsonb,
