@@ -13,4 +13,13 @@ const getLogLevel = (level) => {
   return level;
 };
 
-module.exports = { getLogLevel };
+const getStartOfToday = () => {
+  const startOfToday = new Date();
+  startOfToday.setHours(0);
+  startOfToday.setMinutes(0);
+  startOfToday.setSeconds(0);
+  startOfToday.setMilliseconds(0);
+  return startOfToday;
+};
+
+module.exports = { getLogLevel, getStartOfToday };
