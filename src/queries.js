@@ -61,20 +61,6 @@ const insertTaskToExecuteIn = ({
     RETURNING *;
 `;
 
-const insertTaskToExecuteTodayAt = ({
-  name,
-  params,
-  context,
-  executeTodayAt,
-  parentId,
-}) => sql`
-    INSERT INTO tasks (name, params, context, parent_id, execute_at) 
-    VALUES (${name}, ${params}, ${context}, ${parentId}, current_date + ${executeTodayAt}::time)
-    ON CONFLICT ON CONSTRAINT tasks_unique_key
-    DO UPDATE SET params = EXCLUDED.params, parent_id = EXCLUDED.parent_id
-    RETURNING *;
-`;
-
 const insertTaskToExecuteInSumOf = ({
   name,
   params,
@@ -124,7 +110,6 @@ module.exports = {
   listen,
   processNextTask,
   insertTaskToExecuteAtDateTime,
-  insertTaskToExecuteTodayAt,
   insertTaskToExecuteIn,
   insertTaskToExecuteInSumOf,
   updateExecutionSuccess,
