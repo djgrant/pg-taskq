@@ -1,19 +1,13 @@
-const cp = require("child_process");
-const util = require("util");
 const { PgTaskQ } = require("../../../");
+const { setup } = require("./utils");
 
-const exec = util.promisify(cp.exec);
-const connectionString = process.env.DATABASE_URL;
-
-const taskq = new PgTaskQ({
-  db: { connectionString },
-  schema: "execution_test",
-  processQueueEvery: 100,
-  dependencies: { dep: 1 },
-});
+let taskq;
 
 beforeAll(async () => {
-  await exec(`./packages/pg-taskq/bin/up.js -f -c ${connectionString} -s execution_test`);
+  taskq = await setup({
+    schema: "execution_test",
+    dependencies: { dep: 1 },
+  });
   taskq.start();
 });
 
@@ -81,6 +75,17 @@ it("Is passed a TaskQ instance", (done) => {
   taskq.enqueue("Test Task 6");
   taskq.take("Test Task 6", ({ taskq }) => {
     expect(taskq).toBeInstanceOf(PgTaskQ);
+    done();
+  });
+});
+
+it("Can enqueue sub tasks", (done) => {
+  taskq.enqueue("Parent Task");
+  taskq.take("Parent Task", ({ taskq }) => {
+    taskq.enqueue("Child Task");
+  });
+  taskq.take("Child Task", ({ task }) => {
+    expect(task.parent_id).toEqual(expect.any(Number));
     done();
   });
 });

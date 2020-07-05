@@ -1,11 +1,4 @@
-const cp = require("child_process");
-const util = require("util");
-const pg = require("pg");
-
-const exec = util.promisify(cp.exec);
-
-const connectionString = process.env.DATABASE_URL;
-const client = new pg.Client({ connectionString });
+const { client, connectionString, exec } = require("./utils");
 
 beforeAll(() => {
   client.connect();
@@ -20,12 +13,13 @@ it("Runs migrations", async () => {
   const result = await client.query(`
     SELECT table_name FROM information_schema.tables 
     WHERE table_schema = 'public'
+    ORDER BY table_name
   `);
   expect(result.rows.map((table) => table.table_name)).toEqual([
-    "migrations",
-    "tasks_extended",
-    "tasks",
     "executions",
+    "migrations",
+    "tasks",
+    "tasks_extended",
   ]);
 });
 
@@ -34,12 +28,13 @@ it("Runs migrations in a provided schema", async () => {
   const result = await client.query(`
     SELECT table_name FROM information_schema.tables 
     WHERE table_schema = 'schema_test'
+    ORDER BY table_name
   `);
   expect(result.rows.map((table) => table.table_name)).toEqual([
-    "migrations",
-    "tasks_extended",
-    "tasks",
     "executions",
+    "migrations",
+    "tasks",
+    "tasks_extended",
   ]);
 });
 
