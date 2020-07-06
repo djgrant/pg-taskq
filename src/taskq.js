@@ -1,5 +1,6 @@
 const { Pool } = require("pg");
 const { getLogLevel, getStartOfToday } = require("./utils");
+const { Take } = require("./take");
 const queries = require("./queries");
 
 process.on("unhandledRejection", (reason) => {
@@ -72,116 +73,85 @@ class PgTaskQ {
     };
   }
 
-  take(taskNameOrTaskNames, executeCallback) {
+  take(taskNameOrTaskNames, takeCallback) {
     const taskNames = Array.isArray(taskNameOrTaskNames)
       ? taskNameOrTaskNames
       : [taskNameOrTaskNames];
 
-    const onExecute = makeOnExecute.apply(this);
+    const take = new Take();
 
-    const methods = {
-      onFirstAttempt: (firstAttemptCallback) => {
-        this.on("running", (updatedTask) => {
-          taskNames.forEach((taskName) => {
-            if (taskName !== updatedTask.name || updatedTask.attempts > 1)
-              return;
-            firstAttemptCallback({
-              task: updatedTask,
-              taskq: this.createSubTaskQ({ parentTask: updatedTask }),
-            });
-          });
+    taskNames.forEach((taskName) => {
+      this.on("running", async (updatedTask) => {
+        if (taskName !== updatedTask.name) return;
+
+        const onExecuteCallback = takeCallback || take.onExecuteCallback;
+
+        if (typeof onExecuteCallback !== "function") return;
+
+        const subTaskQ = this.createSubTaskQ({ parentTask: updatedTask });
+        const taskLogger = this.createTaskLogger({
+          executionId: updatedTask.execution_id,
+          taskName: updatedTask.name,
         });
-        return methods;
-      },
-      onExecute,
-      onSuccess: (successCallback) => {
-        this.on("success", (updatedTask) => {
-          taskNames.forEach((taskName) => {
-            if (taskName !== updatedTask.name) return;
-            successCallback({
-              context: updatedTask.context,
-              params: updatedTask.params,
-              task: updatedTask,
-              taskq: this.createSubTaskQ({ parentTask: updatedTask }),
-            });
-          });
-        });
-        return methods;
-      },
-      onFailure: (failureCallback) => {
-        this.on("failure", (updatedTask) => {
-          taskNames.forEach((taskName) => {
-            if (taskName !== updatedTask.name) return;
-            failureCallback({
-              context: updatedTask.context,
-              params: updatedTask.params,
-              task: updatedTask,
-              taskq: this.createSubTaskQ({ parentTask: updatedTask }),
-            });
-          });
-        });
-        return methods;
-      },
-    };
 
-    function makeOnExecute() {
-      return (executeCallback) => {
-        this.on("running", (updatedTask) => {
-          taskNames.forEach(async (taskName) => {
-            if (taskName !== updatedTask.name) return;
+        const executionParams = {
+          context: updatedTask.context,
+          params: updatedTask.params,
+          taskq: subTaskQ,
+          task: updatedTask,
+          log: taskLogger,
+        };
 
-            const subTaskQ = this.createSubTaskQ({ parentTask: updatedTask });
-            const taskLogger = this.createTaskLogger({
-              executionId: updatedTask.execution_id,
-              taskName: updatedTask.name,
-            });
+        const dependencies =
+          typeof this.dependencies === "function"
+            ? this.dependencies(executionParams)
+            : this.dependencies;
 
-            const executionParams = {
-              context: updatedTask.context,
-              params: updatedTask.params,
-              taskq: subTaskQ,
-              task: updatedTask,
-              log: taskLogger,
-            };
+        const executionParamsAndDependencies = {
+          ...dependencies,
+          ...executionParams,
+        };
 
-            const dependencies =
-              typeof this.dependencies === "function"
-                ? this.dependencies(executionParams)
-                : this.dependencies;
+        try {
+          if (
+            updatedTask.attempts === 1 &&
+            typeof take.onFirstAttemptCallback === "function"
+          ) {
+            await take.onFirstAttemptCallback(executionParamsAndDependencies);
+          }
 
-            try {
-              await executeCallback({
-                ...dependencies,
-                ...executionParams,
-              });
+          await onExecuteCallback(executionParamsAndDependencies);
 
-              await this.pool
-                .query(
-                  queries.updateExecutionSuccess({
-                    id: updatedTask.execution_id,
-                  })
-                )
-                .catch(this.log("error"));
-            } catch (err) {
-              await taskLogger(err.stack);
-              await this.pool.query(
-                queries.updateExecutionFailure({
-                  id: updatedTask.execution_id,
-                  maxAttempts: this.maxAttempts,
-                })
-              );
-            }
-          });
-        });
-        return methods;
-      };
-    }
+          await this.pool
+            .query(
+              queries.updateExecutionSuccess({
+                id: updatedTask.execution_id,
+              })
+            )
+            .catch(this.log("error"));
 
-    if (executeCallback) {
-      return onExecute(executeCallback);
-    }
+          if (typeof take.onSuccessCallback === "function") {
+            await take.onSuccessCallback(executionParamsAndDependencies);
+          }
+        } catch (err) {
+          await taskLogger(err && err.stack);
 
-    return methods;
+          await this.pool
+            .query(
+              queries.updateExecutionFailure({
+                id: updatedTask.execution_id,
+                maxAttempts: this.maxAttempts,
+              })
+            )
+            .catch(this.log("error"));
+
+          if (typeof take.onFailureCallback === "function") {
+            await take.onFailureCallback(executionParamsAndDependencies);
+          }
+        }
+      });
+    });
+    return take;
   }
 
   enqueue(task, params) {
