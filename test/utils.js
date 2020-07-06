@@ -17,6 +17,9 @@ const setup = async (opts) => {
   return new TaskQ({
     db: { connectionString },
     processQueueEvery: 10,
+    maxAttempts: 3,
+    backoffDelay: "50 milliseconds",
+    backoffDecay: "linear",
     ...opts,
   });
 };
