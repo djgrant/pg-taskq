@@ -130,25 +130,29 @@ class TaskQ {
           taskNames.forEach(async (taskName) => {
             if (taskName !== updatedTask.name) return;
 
-            const dependencies =
-              typeof this.dependencies === "function"
-                ? this.dependencies(updatedTask)
-                : this.dependencies;
-
             const subTaskQ = this.createSubTaskQ({ parentTask: updatedTask });
             const taskLogger = this.createTaskLogger({
               executionId: updatedTask.execution_id,
               taskName: updatedTask.name,
             });
 
+            const executionParams = {
+              context: updatedTask.context,
+              params: updatedTask.params,
+              taskq: subTaskQ,
+              task: updatedTask,
+              log: taskLogger,
+            };
+
+            const dependencies =
+              typeof this.dependencies === "function"
+                ? this.dependencies(executionParams)
+                : this.dependencies;
+
             try {
               await executeCallback({
                 ...dependencies,
-                context: updatedTask.context,
-                params: updatedTask.params,
-                taskq: subTaskQ,
-                task: updatedTask,
-                log: taskLogger,
+                ...executionParams,
               });
 
               await this.pool
