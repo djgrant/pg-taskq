@@ -1,1 +1,72 @@
-<table></table>
+<% const headings = [ 'ID', 'Name', 'Scheduled for', 'Status', 'Attempts',
+'Child Tasks' ]; %>
+<div class="p-3 border-b border-gray-300">
+  <% if (parent && parent.id !== undefined) { %>
+  <a
+    class="mr-2"
+    href="<%- locals.mountpath %><%- parent.parent_id && parent.parent_id %>"
+    ><span
+      class="text-purple-700 text-center text-xs inline-block border-2 rounded-full w-6 h-6"
+      >←</span
+    ></a
+  >
+
+  <% } %>
+  <span class="text-bold"><%= parent ? parent.name : '' %> tasks</span>
+</div>
+<table class="w-full text-left table-collapse">
+  <thead>
+    <% headings.forEach(label => { %>
+    <th class="text-sm font-semibold text-gray-700 p-3 bg-gray-100">
+      <%= label %>
+    </th>
+    <% }) %>
+  </thead>
+  <% tasks.forEach(function(task){ %>
+  <tr class="<%- task.status === 'pending' && 'text-gray-500' %>">
+    <td
+      class="p-3 border-t border-gray-300 font-mono text-xs whitespace-no-wrap"
+    >
+      <%- task.id %>
+    </td>
+    <td
+      class="p-3 border-t border-gray-300 font-mono text-xs whitespace-no-wrap"
+    >
+      <% if (task.status !== 'pending') { %>
+      <a class="text-purple-700" href="<%- task.id %>/execution"
+        ><%- task.name %></a
+      >
+      <% } else { %> <%- task.name %> <% } %>
+    </td>
+
+    <td
+      class="p-3 border-t border-gray-300 font-mono text-xs whitespace-no-wrap"
+    >
+      <%- task.execute_at %>
+    </td>
+    <td
+      class="p-3 border-t border-gray-300 font-mono text-xs whitespace-no-wrap"
+    >
+      <span
+        class="<%- task.status === 'success' && 'text-green-500' %> <%- task.status === 'failure' && 'text-red-600' %>"
+      >
+        <%- task.status %>
+      </span>
+    </td>
+    <td
+      class="p-3 border-t border-gray-300 font-mono text-xs whitespace-no-wrap"
+    >
+      <%- task.attempts %>
+    </td>
+    <td
+      class="p-3 border-t border-gray-300 font-mono text-xs whitespace-no-wrap"
+    >
+      <% if (task.children > 0) { %>
+      <a class="text-purple-700" href="<%- task.id %>">
+        <%- task.children %> child tasks
+      </a>
+      <% } else { %> No child tasks <% } %>
+    </td>
+  </tr>
+  <% }); %>
+</table>

@@ -2,11 +2,15 @@
 <html lang="en">
   <%- include('../partials/head') %>
   <body>
+    <script>
+      0;
+    </script>
     <header>
       <%- include('../partials/header') %>
     </header>
     <main>
-      <%- include('../partials/tasks') %>
+      <%- (tasks.length) ? include('../partials/tasks') :
+      include('../partials/tasks-empty') %>
     </main>
   </body>
 </html>
