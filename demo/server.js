@@ -3,7 +3,7 @@ const { dashboard } = require("../");
 
 const app = express();
 
-app.use(dashboard);
+app.use(dashboard({ schema: "taskq" }));
 
 app.listen(3000);
 
