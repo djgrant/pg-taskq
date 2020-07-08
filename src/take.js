@@ -15,6 +15,10 @@ class Take {
     this.onSuccessCallback = cb;
     return this;
   }
+  onTimeout(cb) {
+    this.onTimeoutCallback = cb;
+    return this;
+  }
 }
 
 module.exports = { Take };

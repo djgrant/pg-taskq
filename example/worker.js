@@ -7,31 +7,34 @@ const taskq = new TaskQ({
   maxAttempts: 2,
   backoffDelay: "10 seconds",
   backoffDecay: "linear",
+  timeout: "5 seconds",
   schema: "taskq",
 });
 
+taskq.start();
+
 taskq.schedule({
-  name: "daily-task",
+  name: "Daily task",
   executeTodayAt: "00:00",
   params: {},
 });
 
-taskq.enqueue("test task");
+taskq.enqueue("Timeout Task");
 
 taskq
-  .take("daily-task")
+  .take("Daily task")
   .onFirstAttempt(({ task }) => {
     taskq.scheduleAgain(task, { add: "1 day" });
   })
   .onExecute(async ({ taskq }) => {
     await taskq.enqueue({
-      name: "async-task",
+      name: "Async task",
       params: {},
     });
   });
 
 taskq
-  .take("async-task")
+  .take("Async task")
   .onExecute(async ({ log, params }) => {
     log("Running task");
     log(JSON.stringify(params));
@@ -40,22 +43,27 @@ taskq
   .onSuccess(({ task, taskq }) => {
     taskq.scheduleAgain(task, { executeIn: "15 seconds" });
     taskq.schedule({
-      name: "deeply-nested-task",
+      name: "Deeply nested task",
       executeIn: "1 min",
     });
   });
 
 taskq
-  .take("deeply-nested-task")
-  .onExecute(() => {
+  .take("Deeply nested task", () => {
     console.log("Executing deeply nested task");
   })
   .onFailure(({ taskq }) => {
     taskq.enqueue({ name: "email-me", params: { task, status: failure } });
   });
 
+taskq
+  .take("Timeout Task", () => new Promise(() => {}))
+  .onTimeout(() => {
+    console.log("Task timed out");
+  });
+
 taskq.on("success", (task) => {});
 taskq.on("failure", (task) => {});
 taskq.on("running", (task) => {});
-
-taskq.start();
+taskq.on("pending", (task) => {});
+taskq.on("timeout", (task) => {});

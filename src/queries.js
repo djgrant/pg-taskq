@@ -1,10 +1,11 @@
 const sql = require("sql-template-strings");
 
 const listen = () => sql`
+    LISTEN "taskq:pending";
+    LISTEN "taskq:running";
     LISTEN "taskq:failure"; 
     LISTEN "taskq:success"; 
-    LISTEN "taskq:running";
-    LISTEN "taskq:pending";
+    LISTEN "taskq:timeout";
 `;
 
 const processNextTask = ({ maxAttempts, backoffDelay, backoffDecay }) => sql`
@@ -31,6 +32,13 @@ const processNextTask = ({ maxAttempts, backoffDelay, backoffDecay }) => sql`
     INSERT INTO executions (task_id)
     SELECT id FROM next_tasks LIMIT 1
     RETURNING id;
+`;
+
+const selectTimedOutExecutions = ({ timeout }) => sql`
+    SELECT id 
+    FROM executions
+    WHERE status = 'running'
+    AND now() > started_at + ${timeout};
 `;
 
 const insertTaskToExecuteAtDateTime = ({
@@ -100,6 +108,19 @@ const updateExecutionFailure = ({ id, maxAttempts }) => sql`
     AND ( SELECT attempts FROM tasks_extended WHERE id = ( SELECT task_id FROM updated) ) >= ${maxAttempts};
 `;
 
+const updateExecutionTimeout = ({ id, maxAttempts }) => sql`
+    WITH updated AS (
+        UPDATE executions
+        SET status = 'timeout'
+        WHERE id = ${id}
+        RETURNING task_id
+    )
+    UPDATE tasks
+    SET locked = true
+    WHERE id = ( SELECT task_id FROM updated) 
+    AND ( SELECT attempts FROM tasks_extended WHERE id = ( SELECT task_id FROM updated) ) >= ${maxAttempts};
+`;
+
 const appendLog = ({ executionId, message }) => sql`
     UPDATE executions
     SET logs = CONCAT(logs, ${message}::text)
@@ -109,10 +130,12 @@ const appendLog = ({ executionId, message }) => sql`
 module.exports = {
   listen,
   processNextTask,
+  selectTimedOutExecutions,
   insertTaskToExecuteAtDateTime,
   insertTaskToExecuteIn,
   insertTaskToExecuteInSumOf,
   updateExecutionSuccess,
   updateExecutionFailure,
+  updateExecutionTimeout,
   appendLog,
 };

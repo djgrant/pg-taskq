@@ -11,17 +11,19 @@ process.on("unhandledRejection", (reason) => {
 class TaskQ {
   constructor(opts) {
     this.dependencies = opts.dependencies || {};
-    this.processQueueEvery = opts.processQueueEvery || 1000;
-    this.parentTask = opts.parentTask || null;
-    this.logs = opts.logs || {};
-    this.pool = opts.pool || new Pool(opts.db);
-    this.started = opts.started || false;
-    this.subscribers = opts.subscribers || [];
     this.logLevel = opts.logLevel || "warn";
     this.maxAttempts = opts.maxAttempts || 1;
     this.backoffDelay = opts.backoffDelay || "20 seconds";
     this.backoffDecay = opts.backoffDecay || "exponential";
     this.logger = opts.logger || console.log;
+    this.timeout = opts.timeout || "30 seconds";
+
+    // Private
+    this.processQueueEvery = opts.processQueueEvery || 1000;
+    this.parentTask = opts.parentTask || null;
+    this.pool = opts.pool || new Pool(opts.db);
+    this.started = opts.started || false;
+    this.subscribers = opts.subscribers || [];
     this.processingQueue = false;
     this.processingPromise = Promise.resolve();
 
@@ -40,36 +42,40 @@ class TaskQ {
     return new TaskQ(Object.assign({}, this, { parentTask }));
   }
 
-  log(level = "info") {
-    return (msg) => {
+  log(level = "info", msg) {
+    const log = (msg) => {
       if (getLogLevel(level) > getLogLevel(this.logLevel)) return;
-      this.logger(`[TaskQ:${level}]:`, msg, `\n`);
+      this.logger(`[TaskQ:${level}]: ${msg}`);
     };
+    if (msg) return log(msg);
+    return log;
   }
 
   createTaskLogger({ executionId }) {
     return (...messages) => {
-      messages.forEach((message) => {
-        this.log("debug")(message);
-        let messageStr;
-        if (message === null) messageStr = "null";
-        else if (message === undefined) messageStr = "undefined";
-        else {
-          try {
-            messageStr = JSON.stringify(message);
-          } catch {
-            messageStr = message.toString();
+      return Promise.all(
+        messages.map((message) => {
+          this.log("debug")(message);
+          let messageStr;
+          if (message === null) messageStr = "null";
+          else if (message === undefined) messageStr = "undefined";
+          else {
+            try {
+              messageStr = JSON.stringify(message);
+            } catch {
+              messageStr = message.toString();
+            }
           }
-        }
-        return this.pool
-          .query(
-            queries.appendLog({
-              executionId,
-              message: `${messageStr}\n`,
-            })
-          )
-          .catch(this.log("error"));
-      });
+          return this.pool
+            .query(
+              queries.appendLog({
+                executionId,
+                message: `${messageStr}\n`,
+              })
+            )
+            .catch(this.log("error"));
+        })
+      );
     };
   }
 
@@ -80,47 +86,60 @@ class TaskQ {
 
     const take = new Take();
 
+    const getExecutionParams = (updatedTask) => {
+      const subTaskQ = this.createSubTaskQ({ parentTask: updatedTask });
+      const taskLogger = this.createTaskLogger({
+        executionId: updatedTask.execution_id,
+        taskName: updatedTask.name,
+      });
+
+      const executionParams = {
+        context: updatedTask.context,
+        params: updatedTask.params,
+        taskq: subTaskQ,
+        task: updatedTask,
+        log: taskLogger,
+      };
+
+      const dependencies =
+        typeof this.dependencies === "function"
+          ? this.dependencies(executionParams)
+          : this.dependencies;
+
+      return {
+        ...dependencies,
+        ...executionParams,
+      };
+    };
+
     taskNames.forEach((taskName) => {
+      this.on("timeout", (updatedTask) => {
+        if (taskName !== updatedTask.name) return;
+
+        const params = getExecutionParams(updatedTask);
+
+        if (typeof take.onTimeoutCallback === "function") {
+          take.onTimeoutCallback(params);
+        }
+      });
+
       this.on("running", async (updatedTask) => {
         if (taskName !== updatedTask.name) return;
 
+        const params = getExecutionParams(updatedTask);
         const onExecuteCallback = takeCallback || take.onExecuteCallback;
 
         if (typeof onExecuteCallback !== "function") return;
-
-        const subTaskQ = this.createSubTaskQ({ parentTask: updatedTask });
-        const taskLogger = this.createTaskLogger({
-          executionId: updatedTask.execution_id,
-          taskName: updatedTask.name,
-        });
-
-        const executionParams = {
-          context: updatedTask.context,
-          params: updatedTask.params,
-          taskq: subTaskQ,
-          task: updatedTask,
-          log: taskLogger,
-        };
-
-        const dependencies =
-          typeof this.dependencies === "function"
-            ? this.dependencies(executionParams)
-            : this.dependencies;
-
-        const executionParamsAndDependencies = {
-          ...dependencies,
-          ...executionParams,
-        };
 
         try {
           if (
             updatedTask.attempts === 1 &&
             typeof take.onFirstAttemptCallback === "function"
           ) {
-            await take.onFirstAttemptCallback(executionParamsAndDependencies);
+            await take.onFirstAttemptCallback(params);
           }
 
-          await onExecuteCallback(executionParamsAndDependencies);
+          await onExecuteCallback(params);
 
           await this.pool
             .query(
@@ -131,10 +150,10 @@ class TaskQ {
             .catch(this.log("error"));
 
           if (typeof take.onSuccessCallback === "function") {
-            await take.onSuccessCallback(executionParamsAndDependencies);
+            await take.onSuccessCallback(params);
           }
         } catch (err) {
-          await taskLogger(err && err.stack);
+          await params.log(err && err.stack);
 
           await this.pool
             .query(
@@ -146,11 +165,12 @@ class TaskQ {
             .catch(this.log("error"));
 
           if (typeof take.onFailureCallback === "function") {
-            await take.onFailureCallback(executionParamsAndDependencies);
+            await take.onFailureCallback(params);
           }
         }
       });
     });
+
     return take;
   }
 
@@ -278,9 +298,30 @@ class TaskQ {
           backoffDecay: this.backoffDecay,
         })
       );
+      await this.updateTimedOutExecutions();
       if (this.started && rows.length) {
         await this.processQueue();
       }
+    } catch (err) {
+      this.log("error")(err);
+    }
+  }
+
+  async updateTimedOutExecutions() {
+    try {
+      const { rows: timedOutExecutions } = await this.pool.query(
+        queries.selectTimedOutExecutions({ timeout: this.timeout })
+      );
+      Promise.all(
+        timedOutExecutions.map((timedOutExecution) =>
+          this.pool.query(
+            queries.updateExecutionTimeout({
+              id: timedOutExecution.id,
+              maxAttempts: this.maxAttempts,
+            })
+          )
+        )
+      );
     } catch (err) {
       this.log("error")(err);
     }
