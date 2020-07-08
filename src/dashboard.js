@@ -37,6 +37,7 @@ function createApp(opts = {}) {
         ) AS children 
         FROM tasks_extended t 
         WHERE parent_id IS NULL
+        ORDER BY execute_at DESC 
       `;
 
     const nestedQuery = sql`
@@ -47,6 +48,7 @@ function createApp(opts = {}) {
         ) AS children 
         FROM tasks_extended t 
         WHERE parent_id = ${id}
+        ORDER BY execute_at DESC 
       `;
 
     try {
