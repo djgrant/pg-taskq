@@ -53,3 +53,16 @@ test("Passing a dependencies factory function", async (done) => {
     done();
   });
 });
+
+test("Passing a logger instance", async () => {
+  const mockLogger = jest.fn();
+  taskq = await setup({
+    schema: "dependencies_test",
+    logger: mockLogger,
+    logLevel: "warn",
+  });
+  taskq.start();
+  taskq.log("warn")("Test log");
+  taskq.log("info")("Won't be logged");
+  expect(mockLogger).toBeCalledWith("[TaskQ:warn]:", "Test log");
+});
