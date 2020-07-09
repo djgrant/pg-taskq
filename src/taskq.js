@@ -46,7 +46,7 @@ class TaskQ {
   log(level = "info", msg) {
     const log = (msg) => {
       if (getLogLevel(level) > getLogLevel(this.logLevel)) return;
-      this.logger(`[TaskQ:${level}]: ${msg}`);
+      this.logger(`[TaskQ:${level}]:`, msg);
     };
     if (msg) return log(msg);
     return log;
@@ -61,6 +61,7 @@ class TaskQ {
           if (message === null) messageStr = "null";
           else if (message === undefined) messageStr = "undefined";
           else if (message instanceof Error)
+            messageStr = message.stack || message.toString();
           else {
             try {
               messageStr = JSON.stringify(message);

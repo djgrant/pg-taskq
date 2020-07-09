@@ -10,7 +10,8 @@ const getLogLevel = (level) => {
       silly: 6,
     }[level];
   }
-  return level;
+  if (typeoflevel === "number") return level;
+  return 2;
 };
 
 const getStartOfToday = () => {
