@@ -121,6 +121,16 @@ class TaskQ {
         }
       });
 
+      this.on("locked", (updatedTask) => {
+        if (taskName !== updatedTask.name) return;
+
+        const params = getExecutionParams(updatedTask);
+
+        if (typeof take.onLockedCallback === "function") {
+          take.onLockedCallback(params);
+        }
+      });
+
       this.on("running", async (updatedTask) => {
         if (taskName !== updatedTask.name) return;
 
@@ -145,13 +155,20 @@ class TaskQ {
                 id: updatedTask.execution_id,
               })
             )
+            .then((result) => {
+              if (result.rows[0]) {
+                params.task = result.rows[0];
+              } else {
+                params.task.status = "success";
+              }
+            })
             .catch(this.log("error"));
 
           if (typeof take.onSuccessCallback === "function") {
             await take.onSuccessCallback(params);
           }
         } catch (err) {
-          await params.log(err && err.stack);
+          await params.log(err);
 
           await this.pool
             .query(
@@ -160,6 +177,13 @@ class TaskQ {
                 maxAttempts: this.maxAttempts,
               })
             )
+            .then((result) => {
+              if (result.rows[0]) {
+                params.task = result.rows[0];
+              } else {
+                params.task.status = "failure";
+              }
+            })
             .catch(this.log("error"));
 
           if (typeof take.onFailureCallback === "function") {
@@ -236,7 +260,7 @@ class TaskQ {
       );
     }
 
-    return await this.pool
+    return this.pool
       .query(
         insertQuery({
           ...task,
@@ -356,25 +380,30 @@ class TaskQ {
   }
 
   setUpInfoLogging() {
+    this.on("pending", (task) => {
+      this.log("info")(`Enqueued task "${task.name}" (task id: ${task.id})`);
+    });
     this.on("running", (task) => {
       this.log("info")(
         `Executing task "${task.name}" (execution id: ${task.execution_id})`
       );
     });
-    this.on("success", (task) => {
+    this.on("timeout", (task) => {
       this.log("info")(
-        `Successfully executed task "${task.name}" (execution id: ${task.execution_id})`
+        `Task "${task.name}" timed out after ${this.timeout} (execution id: ${task.execution_id})`
       );
     });
     this.on("failure", (task) => {
       this.log("info")(
-        `Failed to execute task "${task.name}" (execution id: ${task.execution_id})`
+        `Task "${task.name}" failed to execute (execution id: ${task.execution_id})`
       );
     });
-    this.on("pending", (task) => {
-      this.log("info")(`Enqueued task "${task.name}" (task id: ${task.id})`);
+    this.on("success", (task) => {
+      this.log("info")(
+        `Task "${task.name}" successfully executed (execution id: ${task.execution_id})`
+      );
     });
-    this.on("upsert", (task) => {
+    this.on("no-op", (task) => {
       this.log("info")(
         `Already enqueued task "${task.name}" (task id: ${task.id})`
       );

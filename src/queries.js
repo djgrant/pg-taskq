@@ -6,6 +6,8 @@ const listen = () => sql`
     LISTEN "taskq:failure"; 
     LISTEN "taskq:success"; 
     LISTEN "taskq:timeout";
+    LISTEN "taskq:locked";
+    LISTEN "taskq:no-op";
 `;
 
 const processNextTask = ({ maxAttempts, backoffDelay, backoffDecay }) => sql`

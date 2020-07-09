@@ -15,9 +15,23 @@ afterAll(async () => {
   await taskq.stop();
 });
 
-it("times out", (done) => {
-  let attempts = 0;
-  let timeoutMock = jest.fn();
+test("A task is locked after reaching max attempts", (done) => {
+  const executeMock = jest.fn(() => {
+    throw new Error();
+  });
+  const failureMock = jest.fn();
+  taskq.enqueue("Lock Task");
+  taskq
+    .take("Lock Task")
+    .onExecute(executeMock)
+    .onFailure(failureMock)
+    .onLocked(({ task }) => {
+      expect(executeMock).toBeCalledTimes(4);
+      expect(failureMock).toBeCalledTimes(4);
+      expect(task.status).toEqual("failure");
+      done();
+    });
+});
 
 test("An execution times out", (done) => {
   const timeoutMock = jest.fn();
