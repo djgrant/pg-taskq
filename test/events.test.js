@@ -18,7 +18,7 @@ afterAll(async () => {
 
 test("Running event", (done) => {
   taskq.enqueue("Test Task");
-  taskq.on("running", (task) => {
+  taskq.on("running", ({ task }) => {
     if (task.name === "Test Task") {
       expect(task.status).toEqual("running");
       done();
@@ -29,7 +29,7 @@ test("Running event", (done) => {
 test("Success event", (done) => {
   taskq.enqueue("Test success");
   taskq.take("Test success", () => {});
-  taskq.on("success", (task) => {
+  taskq.on("success", ({ task }) => {
     if (task.name === "Test success") {
       expect(task.status).toEqual("success");
       done();
@@ -42,7 +42,7 @@ test("Failure event", (done) => {
   taskq.take("Test failure", () => {
     throw new Error("Task failed");
   });
-  taskq.on("failure", (task) => {
+  taskq.on("failure", ({ task }) => {
     if (task.name === "Test failure") {
       expect(task.status).toEqual("failure");
       done();
@@ -52,7 +52,7 @@ test("Failure event", (done) => {
 
 test("Pending event", (done) => {
   taskq.enqueue("Test pending");
-  taskq.on("pending", (task) => {
+  taskq.on("pending", ({ task }) => {
     if (task.name === "Test pending") {
       expect(task.status).toEqual("pending");
       done();
@@ -62,7 +62,7 @@ test("Pending event", (done) => {
 
 test("Timeout event", (done) => {
   taskq.enqueue("Test timeout");
-  taskq.on("timeout", (task) => {
+  taskq.on("timeout", ({ task }) => {
     if (task.name === "Test timeout") {
       expect(task.status).toEqual("timeout");
       done();
@@ -72,7 +72,7 @@ test("Timeout event", (done) => {
 
 test("Locked event", (done) => {
   taskq.enqueue("Test locked");
-  taskq.on("locked", (task) => {
+  taskq.on("locked", ({ task }) => {
     if (task.name === "Test locked") {
       expect(task.status).toBe("timeout");
       expect(task.locked).toBe(true);
@@ -91,7 +91,7 @@ test("No-op event", async (done) => {
     name: "Test no-op",
     executeAtDateTime: time,
   });
-  taskq.on("no-op", (task) => {
+  taskq.on("no-op", ({ task }) => {
     if (task.name === "Test no-op") {
       expect(id).toEqual(task.id);
       done();

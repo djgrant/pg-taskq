@@ -77,6 +77,32 @@ class TaskQ {
     };
   }
 
+  getExecutionParams(task) {
+    const subTaskQ = this.createSubTaskQ({ parentTask: task });
+    const taskLogger = this.createTaskLogger({
+      executionId: task.execution_id,
+      taskName: task.name,
+    });
+
+    const executionParams = {
+      context: task.context,
+      params: task.params,
+      taskq: subTaskQ,
+      task: task,
+      log: taskLogger,
+    };
+
+    const dependencies =
+      typeof this.dependencies === "function"
+        ? this.dependencies(executionParams)
+        : this.dependencies;
+
+    return {
+      ...dependencies,
+      ...executionParams,
+    };
+  }
+
   take(taskNameOrTaskNames, takeCallback) {
     const taskNames = Array.isArray(taskNameOrTaskNames)
       ? taskNameOrTaskNames
@@ -84,64 +110,40 @@ class TaskQ {
 
     const take = new Take();
 
-    const getExecutionParams = (updatedTask) => {
-      const subTaskQ = this.createSubTaskQ({ parentTask: updatedTask });
-      const taskLogger = this.createTaskLogger({
-        executionId: updatedTask.execution_id,
-        taskName: updatedTask.name,
-      });
-
-      const executionParams = {
-        context: updatedTask.context,
-        params: updatedTask.params,
-        taskq: subTaskQ,
-        task: updatedTask,
-        log: taskLogger,
-      };
-
-      const dependencies =
-        typeof this.dependencies === "function"
-          ? this.dependencies(executionParams)
-          : this.dependencies;
-
-      return {
-        ...dependencies,
-        ...executionParams,
-      };
-    };
-
     taskNames.forEach((taskName) => {
-      this.on("timeout", (updatedTask) => {
-        if (taskName !== updatedTask.name) return;
-
-        const params = getExecutionParams(updatedTask);
-
-        if (typeof take.onTimeoutCallback === "function") {
-          take.onTimeoutCallback(params);
-        }
+      this.on("timeout", (params) => {
+        if (taskName !== params.task.name) return;
+        if (typeof take.onTimeoutCallback !== "function") return;
+        take.onTimeoutCallback(params);
       });
 
-      this.on("locked", (updatedTask) => {
-        if (taskName !== updatedTask.name) return;
-
-        const params = getExecutionParams(updatedTask);
-
-        if (typeof take.onLockedCallback === "function") {
-          take.onLockedCallback(params);
-        }
+      this.on("locked", (params) => {
+        if (taskName !== params.task.name) return;
+        if (typeof take.onLockedCallback !== "function") return;
+        take.onLockedCallback(params);
       });
 
-      this.on("running", async (updatedTask) => {
-        if (taskName !== updatedTask.name) return;
+      this.on("failure", (params) => {
+        if (taskName !== params.task.name) return;
+        if (typeof take.onFailureCallback !== "function") return;
+        take.onFailureCallback(params);
+      });
 
-        const params = getExecutionParams(updatedTask);
+      this.on("success", (params) => {
+        if (taskName !== params.task.name) return;
+        if (typeof take.onSuccessCallback !== "function") return;
+        take.onSuccessCallback(params);
+      });
+
+      this.on("running", async (params) => {
         const onExecuteCallback = takeCallback || take.onExecuteCallback;
 
+        if (taskName !== params.task.name) return;
         if (typeof onExecuteCallback !== "function") return;
 
         try {
           if (
-            updatedTask.attempts === 1 &&
+            params.task.attempts === 1 &&
             typeof take.onFirstAttemptCallback === "function"
           ) {
             await take.onFirstAttemptCallback(params);
@@ -149,46 +151,24 @@ class TaskQ {
 
           await onExecuteCallback(params);
 
-          await this.pool
+          this.pool
             .query(
               queries.updateExecutionSuccess({
-                id: updatedTask.execution_id,
+                id: params.task.execution_id,
               })
             )
-            .then((result) => {
-              if (result.rows[0]) {
-                params.task = result.rows[0];
-              } else {
-                params.task.status = "success";
-              }
-            })
             .catch(this.log("error"));
-
-          if (typeof take.onSuccessCallback === "function") {
-            await take.onSuccessCallback(params);
-          }
         } catch (err) {
           await params.log(err);
 
-          await this.pool
+          this.pool
             .query(
               queries.updateExecutionFailure({
-                id: updatedTask.execution_id,
+                id: params.task.execution_id,
                 maxAttempts: this.maxAttempts,
               })
             )
-            .then((result) => {
-              if (result.rows[0]) {
-                params.task = result.rows[0];
-              } else {
-                params.task.status = "failure";
-              }
-            })
             .catch(this.log("error"));
-
-          if (typeof take.onFailureCallback === "function") {
-            await take.onFailureCallback(params);
-          }
         }
       });
     });
@@ -368,42 +348,43 @@ class TaskQ {
     const client = (this.notificationClient = await this.pool.connect());
     await client.query(queries.listen());
     client.on("notification", ({ channel, payload }) => {
-      let parsedPayload = payload;
+      let task = payload;
       try {
-        parsedPayload = JSON.parse(payload);
+        task = JSON.parse(payload);
       } catch {}
       this.subscribers.forEach(([event, subscriber]) => {
         if (channel !== event) return;
-        subscriber(parsedPayload);
+        const params = this.getExecutionParams(task);
+        subscriber(params);
       });
     });
   }
 
   setUpInfoLogging() {
-    this.on("pending", (task) => {
+    this.on("pending", ({ task }) => {
       this.log("info")(`Enqueued task "${task.name}" (task id: ${task.id})`);
     });
-    this.on("running", (task) => {
+    this.on("running", ({ task }) => {
       this.log("info")(
         `Executing task "${task.name}" (execution id: ${task.execution_id})`
       );
     });
-    this.on("timeout", (task) => {
+    this.on("timeout", ({ task }) => {
       this.log("info")(
         `Task "${task.name}" timed out after ${this.timeout} (execution id: ${task.execution_id})`
       );
     });
-    this.on("failure", (task) => {
+    this.on("failure", ({ task }) => {
       this.log("info")(
         `Task "${task.name}" failed to execute (execution id: ${task.execution_id})`
       );
     });
-    this.on("success", (task) => {
+    this.on("success", ({ task }) => {
       this.log("info")(
         `Task "${task.name}" successfully executed (execution id: ${task.execution_id})`
       );
     });
-    this.on("no-op", (task) => {
+    this.on("no-op", ({ task }) => {
       this.log("info")(
         `Already enqueued task "${task.name}" (task id: ${task.id})`
       );
