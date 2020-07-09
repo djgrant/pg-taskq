@@ -403,4 +403,4 @@ class TaskQ {
   }
 }
 
-module.exports = TaskQ;
+module.exports = { TaskQ };

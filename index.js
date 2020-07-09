@@ -1,4 +1,4 @@
-module.exports = {
-  dashboard: require("./src/dashboard"),
-  TaskQ: require("./src/taskq"),
-};
+const { TaskQ } = require("./src/worker/taskq");
+const { createTaskqApp } = require("./src/server/create-app");
+
+module.exports = { TaskQ, createTaskqApp };

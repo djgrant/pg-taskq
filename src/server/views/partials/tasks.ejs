@@ -4,13 +4,12 @@
   <% if (parent && parent.id !== undefined) { %>
   <a
     class="mr-2"
-    href="<%- locals.mountpath %><%- parent.parent_id && parent.parent_id %>"
+    href="<%- locals.mountpath %>tasks/<%- parent.parent_id && `${parent.parent_id}/tasks` %>"
     ><span
       class="text-purple-700 text-center text-xs inline-block border-2 rounded-full w-6 h-6"
       >←</span
     ></a
   >
-
   <% } %>
   <span class="text-bold"><%= parent ? parent.name : '' %> tasks</span>
 </div>
@@ -33,7 +32,9 @@
       class="p-3 border-t border-gray-300 font-mono text-xs whitespace-no-wrap"
     >
       <% if (task.status !== 'pending') { %>
-      <a class="text-purple-700" href="<%- task.id %>/execution"
+      <a
+        class="text-purple-700"
+        href="<%- locals.mountpath %>tasks/<%- task.id %>"
         ><%- task.name %></a
       >
       <% } else { %> <%- task.name %> <% } %>
@@ -62,7 +63,10 @@
       class="p-3 border-t border-gray-300 font-mono text-xs whitespace-no-wrap"
     >
       <% if (task.children > 0) { %>
-      <a class="text-purple-700" href="<%- task.id %>">
+      <a
+        class="text-purple-700"
+        href="<%- locals.mountpath %>tasks/<%- task.id %>/tasks"
+      >
         <%- task.children %> child tasks
       </a>
       <% } else { %> No child tasks <% } %>

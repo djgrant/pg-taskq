@@ -1,0 +1,62 @@
+<div class="flex justify-between p-3 border-b border-gray-300">
+  <div>
+    <a
+      class="mr-2"
+      href="<%- locals.mountpath %>tasks/<%- execution.parent_id %>"
+      ><span
+        class="text-purple-700 text-center text-xs inline-block border-2 rounded-full w-6 h-6"
+        >←</span
+      ></a
+    >
+    <span><%- execution.name %></span>
+  </div>
+  <% if (!['running', 'pending'].includes(execution.status)) { %>
+  <button
+    id="rerun-button"
+    class="bg-white hover:bg-gray-100 text-gray-800 font-semibold py-1 px-3 text-sm border border-gray-400 rounded"
+  >
+    Run again
+  </button>
+  <% } %>
+</div>
+
+<div class="p-3 border-b border-gray-300 text-sm">
+  <p><span class="font-semibold">Status:</span> <%- execution.status %></p>
+  <p><span class="font-semibold">Attempts:</span> <%- execution.attempts %></p>
+  <p><span class="font-semibold">Started:</span> <%- execution.started_at %></p>
+  <% if (execution.children > 0) { %>
+  <br />
+  <a
+    class="text-purple-700"
+    href="<%- locals.mountpath %>tasks/<%- execution.task_id %>/tasks"
+  >
+    Spawned <%- execution.children %> child tasks
+  </a>
+  <% } %>
+</div>
+<div class="p-3 border-b border-gray-300 text-sm">
+  <h3 class="font-semibold text-sm text-gray-700">Params</h3>
+  <pre><code><%= JSON.stringify(execution.params, null, 2) %></code></pre>
+
+  <h3 class="font-semibold text-sm text-gray-700">Context</h3>
+  <pre><code><%= JSON.stringify(execution.context, null, 2) %></code></pre>
+</div>
+
+<div class="p-3 text-sm">
+  <h3 class="font-semibold text-sm text-gray-700">Logs</h3>
+  <pre><code><%= JSON.stringify(execution.logs) %></code></pre>
+</div>
+
+<script>
+  const baseUrl = `//${window.location.host}<%- locals.mountpath %>`;
+  const rerunButton = document.getElementById("rerun-button");
+  const taskId = "<%- execution.task_id %>";
+
+  rerunButton.addEventListener("click", () => {
+    fetch(`${baseUrl}api/tasks/${taskId}/rerun`)
+      .then((res) => res.json())
+      .then(({ id: executionId }) => {
+        window.location = `${baseUrl}executions/${executionId}`;
+      });
+  });
+</script>
