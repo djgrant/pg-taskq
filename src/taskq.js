@@ -26,6 +26,7 @@ class TaskQ {
     this.subscribers = opts.subscribers || [];
     this.processingQueue = false;
     this.processingPromise = Promise.resolve();
+    this.logQ = opts.logQ || [];
 
     if (opts.schema) {
       this.pool.on("connect", (client) =>
@@ -53,12 +54,13 @@ class TaskQ {
 
   createTaskLogger({ executionId }) {
     return (...messages) => {
-      return Promise.all(
-        messages.map((message) => {
+      const message = messages
+        .map((message) => {
           this.log("debug")(message);
           let messageStr;
           if (message === null) messageStr = "null";
           else if (message === undefined) messageStr = "undefined";
+          else if (message instanceof Error)
           else {
             try {
               messageStr = JSON.stringify(message);
@@ -66,16 +68,11 @@ class TaskQ {
               messageStr = message.toString();
             }
           }
-          return this.pool
-            .query(
-              queries.appendLog({
-                executionId,
-                message: `${messageStr}\n`,
-              })
-            )
-            .catch(this.log("error"));
+          return messageStr;
         })
-      );
+        .join("");
+
+      this.logQ.push({ message, executionId });
     };
   }
 
@@ -299,6 +296,7 @@ class TaskQ {
         })
       );
       await this.updateTimedOutExecutions();
+      await this.processLogs();
       if (this.started && rows.length) {
         await this.processQueue();
       }
@@ -324,6 +322,20 @@ class TaskQ {
       );
     } catch (err) {
       this.log("error")(err);
+    }
+  }
+
+  async processLogs() {
+    while (this.logQ.length) {
+      const { message, executionId } = this.logQ.shift();
+      await this.pool
+        .query(
+          queries.appendLog({
+            executionId,
+            message: `${message}\n`,
+          })
+        )
+        .catch(this.log("error"));
     }
   }
 
