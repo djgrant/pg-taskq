@@ -19,6 +19,10 @@ class Take {
     this.onTimeoutCallback = cb;
     return this;
   }
+  onLocked(cb) {
+    this.onLockedCallback = cb;
+    return this;
+  }
 }
 
 module.exports = { Take };

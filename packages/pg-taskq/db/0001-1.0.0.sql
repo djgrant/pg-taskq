@@ -51,47 +51,59 @@ SELECT t.id,
 FROM tasks t
 ORDER BY t.id;
 
-CREATE FUNCTION on_task_inserted () RETURNS TRIGGER AS $$
-BEGIN
-    PERFORM pg_notify('taskq:pending', row_to_json(NEW)::text);
-    RETURN NEW;
-END
-$$ LANGUAGE plpgsql VOLATILE;
+--- FUNCTIONS --
 
-CREATE FUNCTION on_task_upserted () RETURNS TRIGGER AS $$
-BEGIN
-    PERFORM pg_notify('taskq:upserted', row_to_json(NEW)::text);
+CREATE FUNCTION on_task_event () RETURNS TRIGGER AS $$ 
+DECLARE
+    event varchar := TG_ARGV[0];
+    task text := (
+        SELECT row_to_json(t) FROM (
+            SELECT * FROM tasks_extended WHERE id = NEW.id
+        ) t
+    );
+BEGIN 
+    PERFORM pg_notify(CONCAT('taskq:', event), task);
     RETURN NEW;
-END
-$$ LANGUAGE plpgsql VOLATILE;
+END;
+$$ LANGUAGE 'plpgsql' VOLATILE;
 
 CREATE FUNCTION on_task_status_change () RETURNS TRIGGER AS $$ 
 DECLARE
-    status varchar(10) := NEW.status;
+    event varchar := NEW.status;
     task text := (
         SELECT row_to_json(t) FROM (
             SELECT *, NEW.id as execution_id FROM tasks_extended WHERE id = NEW.task_id
         ) t
     );
 BEGIN 
-    PERFORM pg_notify(CONCAT('taskq:', status), task);
+    PERFORM pg_notify(CONCAT('taskq:', event), task);
     RETURN NEW;
 END;
 $$ LANGUAGE 'plpgsql' VOLATILE;
 
 
+-- TRIGGERS ---
+
 CREATE TRIGGER on_task_inserted
 AFTER INSERT ON tasks
 FOR EACH ROW
-EXECUTE PROCEDURE on_task_inserted ();
+EXECUTE PROCEDURE on_task_event('pending');
 
-CREATE TRIGGER on_task_upsert
+CREATE TRIGGER on_task_no_op
 AFTER UPDATE ON tasks
 FOR EACH ROW 
 WHEN (
     OLD.name = NEW.name AND OLD.execute_at = NEW.execute_at
 ) 
-EXECUTE PROCEDURE on_task_upserted ();
+EXECUTE PROCEDURE on_task_event('no-op');
+
+CREATE TRIGGER on_task_locked
+AFTER UPDATE ON tasks
+FOR EACH ROW 
+WHEN (
+    OLD.locked IS FALSE AND NEW.locked IS TRUE
+) 
+EXECUTE PROCEDURE on_task_event('locked');
 
 CREATE TRIGGER on_task_status_change
 AFTER UPDATE ON executions
