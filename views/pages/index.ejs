@@ -9,7 +9,7 @@
       <%- include('../partials/header') %>
     </header>
     <main>
-      <%- (tasks.length) ? include('../partials/tasks') :
+      <%- locals.tasks ? include('../partials/tasks') :
       include('../partials/tasks-empty') %>
     </main>
   </body>

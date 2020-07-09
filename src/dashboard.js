@@ -54,9 +54,13 @@ function createApp(opts = {}) {
     try {
       const { rows: tasks } = await pool.query(id ? nestedQuery : rootQuery);
 
-      if (!tasks.length) {
-        res.render("pages/index", { tasks: [] });
+      if (!id && !tasks.length) {
+        res.render("pages/index");
         return;
+      }
+
+      if (!tasks.length) {
+        res.sendStatus(404);
       }
 
       const { rows: parents } = await pool.query(
