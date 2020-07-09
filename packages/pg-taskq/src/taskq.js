@@ -403,4 +403,4 @@ class PgTaskQ {
   }
 }
 
-module.exports = TaskQ;
+module.exports = { PgTaskQ };

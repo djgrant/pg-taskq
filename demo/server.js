@@ -1,9 +1,10 @@
 const express = require("express");
-const { dashboard } = require("../");
+const { createPgTaskqApp } = require("../");
 
 const app = express();
+const taskqApp = createPgTaskqApp({ schema: "taskq" });
 
-app.use(dashboard({ schema: "taskq" }));
+app.use(taskqApp);
 
 app.listen(3000);
 

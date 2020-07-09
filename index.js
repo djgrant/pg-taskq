@@ -1,4 +1,4 @@
-module.exports = {
-  dashboard: require("./src/dashboard"),
-  TaskQ: require("./src/taskq"),
-};
+const { PgTaskQ } = require("./packages/pg-taskq/src/taskq");
+const { createPgTaskqApp } = require("./packages/pg-taskq-server/src/create-app");
+
+module.exports = { PgTaskQ, createPgTaskqApp };
