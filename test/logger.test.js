@@ -22,11 +22,15 @@ it("logs various types of data in order", (done) => {
     log(6);
     await taskq.processingPromise;
     const result = await taskq.pool.query(
-      sql`SELECT logs FROM executions WHERE id = ${task.id}`
+      sql`SELECT message FROM logs WHERE execution_id = ${task.execution_id}`
     );
-    expect(result.rows[0].logs).toEqual(
-      "null\n" + '"one"\n' + '{"two":3}\n' + '["four","five"]\n' + "6\n"
-    );
+    expect(result.rows).toEqual([
+      { message: "null" },
+      { message: '"one"' },
+      { message: '{"two":3}' },
+      { message: '["four","five"]' },
+      { message: "6" },
+    ]);
     done();
   });
 });
@@ -37,9 +41,9 @@ it("logs errors passed explicitly to logger", (done) => {
     log(new Error("Something went wrong"));
     await taskq.processingPromise;
     const result = await taskq.pool.query(
-      sql`SELECT logs FROM executions WHERE id = ${task.id}`
+      sql`SELECT message FROM logs WHERE execution_id = ${task.execution_id}`
     );
-    expect(result.rows[0].logs).toMatch(/^Error: Something went wrong/);
+    expect(result.rows[0].message).toMatch(/^Error: Something went wrong/);
     done();
   });
 });
@@ -48,14 +52,16 @@ it("logs error throw within a task execution", (done) => {
   taskq.enqueue("Error Task");
   taskq
     .take("Error Task", () => {
-      throw new Error("Something went wrong");
+      throw new Error("Something went wrong in the task");
     })
     .onFailure(async ({ task }) => {
       await taskq.processingPromise;
       const result = await taskq.pool.query(
-        sql`SELECT logs FROM executions WHERE id = ${task.id}`
+        sql`SELECT message FROM logs WHERE execution_id = ${task.execution_id}`
       );
-      expect(result.rows[0].logs).toMatch(/^Error: Something went wrong/);
+      expect(result.rows[0].message).toMatch(
+        /^Error: Something went wrong in the task/
+      );
       done();
     });
 });

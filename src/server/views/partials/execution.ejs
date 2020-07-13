@@ -34,17 +34,22 @@
   </a>
   <% } %>
 </div>
+
 <div class="p-3 border-b border-gray-300 text-sm">
   <h3 class="font-semibold text-sm text-gray-700">Params</h3>
   <pre><code><%= JSON.stringify(execution.params, null, 2) %></code></pre>
+</div>
 
+<div class="p-3 border-b border-gray-300 text-sm">
   <h3 class="font-semibold text-sm text-gray-700">Context</h3>
   <pre><code><%= JSON.stringify(execution.context, null, 2) %></code></pre>
 </div>
 
 <div class="p-3 text-sm">
   <h3 class="font-semibold text-sm text-gray-700">Logs</h3>
-  <pre><code><%= JSON.stringify(execution.logs) %></code></pre>
+  <% logs.forEach(log => { %>
+  <pre><code><span class="text-gray-500"><%= log.time.toISOString() %>:</span> <%= log.message %></code></pre>
+  <% }) %>
 </div>
 
 <script>

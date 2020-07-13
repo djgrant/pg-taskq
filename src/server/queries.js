@@ -3,7 +3,7 @@ const sql = require("sql-template-strings");
 const selectTask = ({ id }) => sql`SELECT * FROM tasks WHERE id = ${id}`;
 
 const selectLatestExecution = ({ taskId }) => sql`
-  SELECT e.*, e.id as execution_id, t.*, (
+  SELECT t.*, t.id as task_id, e.*, (
     SELECT count(*)::int
     FROM tasks tt
     WHERE t.id = tt.parent_id
@@ -25,6 +25,12 @@ const selectExecution = ({ executionId }) => sql`
   WHERE e.id = ${executionId}
   AND t.id = e.task_id 
   LIMIT 1
+`;
+
+const selectLogs = ({ executionId }) => sql`
+  SELECT time, message 
+  FROM logs
+  WHERE execution_id = ${executionId}
 `;
 
 const selectRootTasks = ({ lastItem = 0 } = {}) => sql`
@@ -60,6 +66,7 @@ const rerunTask = ({ taskId }) => sql`
 module.exports = {
   selectExecution,
   selectLatestExecution,
+  selectLogs,
   selectRootTasks,
   selectChildTasks,
   selectTask,

@@ -48,11 +48,11 @@ function createTaskqApp(opts = {}) {
         return;
       }
 
-      const { rows: parents } = await pool.query(
-        queries.selectTask({ id: tasks[0].parent_id })
-      );
+      const {
+        rows: [parent],
+      } = await pool.query(queries.selectTask({ id: tasks[0].parent_id }));
 
-      res.render("pages/index", { tasks, parent: parents[0] });
+      res.render("pages/index", { tasks, parent });
     } catch (err) {
       console.log(err);
       res.sendStatus(500);
@@ -63,16 +63,20 @@ function createTaskqApp(opts = {}) {
     const { taskId } = req.params;
 
     try {
-      const { rows: executions } = await pool.query(
-        queries.selectLatestExecution({ taskId })
-      );
+      const {
+        rows: [execution],
+      } = await pool.query(queries.selectLatestExecution({ taskId }));
 
-      if (!executions.length) {
+      if (!execution) {
         res.sendStatus(404);
         return;
       }
 
-      res.render("pages/execution", { execution: executions[0] });
+      const { rows: logs } = await pool.query(
+        queries.selectLogs({ executionId: execution.id })
+      );
+
+      res.render("pages/execution", { execution, logs });
     } catch (err) {
       console.log(err);
       res.sendStatus(500);
@@ -83,16 +87,20 @@ function createTaskqApp(opts = {}) {
     const { executionId } = req.params;
 
     try {
-      const { rows: executions } = await pool.query(
-        queries.selectExecution({ executionId })
-      );
+      const {
+        rows: [execution],
+      } = await pool.query(queries.selectExecution({ executionId }));
 
-      if (!executions.length) {
+      if (!execution) {
         res.sendStatus(404);
         return;
       }
 
-      res.render("pages/execution", { execution: executions[0] });
+      const { rows: logs } = await pool.query(
+        queries.selectLogs({ executionId })
+      );
+
+      res.render("pages/execution", { execution, logs });
     } catch (err) {
       console.log(err);
       res.sendStatus(500);
@@ -103,12 +111,16 @@ function createTaskqApp(opts = {}) {
     const taskId = req.params.taskId;
 
     try {
-      const { rows: tasks } = await pool.query(queries.rerunTask({ taskId }));
-      if (!tasks.length) {
+      const {
+        rows: [task],
+      } = await pool.query(queries.rerunTask({ taskId }));
+
+      if (!task) {
         res.sendStatus(404);
         return;
       }
-      res.json(tasks[0]);
+
+      res.json(task);
     } catch (err) {
       console.log(err);
       res.sendStatus(500);

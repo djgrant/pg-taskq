@@ -123,10 +123,9 @@ const updateExecutionTimeout = ({ id, maxAttempts }) => sql`
     AND ( SELECT attempts FROM tasks_extended WHERE id = ( SELECT task_id FROM updated) ) >= ${maxAttempts};
 `;
 
-const appendLog = ({ executionId, message }) => sql`
-    UPDATE executions
-    SET logs = CONCAT(logs, ${message}::text)
-    WHERE id = ${executionId}
+const insertLog = ({ executionId, message }) => sql`
+    INSERT INTO logs (execution_id, message)
+    VALUES (${executionId}, ${message});
 `;
 
 module.exports = {
@@ -139,5 +138,5 @@ module.exports = {
   updateExecutionSuccess,
   updateExecutionFailure,
   updateExecutionTimeout,
-  appendLog,
+  insertLog,
 };
