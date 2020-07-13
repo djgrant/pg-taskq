@@ -53,7 +53,7 @@ class PgTaskQ {
     return log;
   }
 
-  createTaskLogger({ executionId }) {
+  createExecutionLogger({ executionId }) {
     return (...messages) => {
       const message = messages
         .map((message) => {
@@ -80,9 +80,8 @@ class PgTaskQ {
 
   getExecutionParams(task) {
     const subTaskQ = this.createSubTaskQ({ parentTask: task });
-    const taskLogger = this.createTaskLogger({
+    const taskLogger = this.createExecutionLogger({
       executionId: task.execution_id,
-      taskName: task.name,
     });
 
     const executionParams = {
@@ -347,12 +346,7 @@ class PgTaskQ {
     while (this.logQ.length) {
       const { message, executionId } = this.logQ.shift();
       await this.pool
-        .query(
-          queries.appendLog({
-            executionId,
-            message: `${message}\n`,
-          })
-        )
+        .query(queries.insertLog({ executionId, message }))
         .catch(this.log("error"));
     }
   }

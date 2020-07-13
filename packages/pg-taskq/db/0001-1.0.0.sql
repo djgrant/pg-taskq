@@ -12,9 +12,15 @@ CREATE TABLE tasks (
 CREATE TABLE executions (
     id serial PRIMARY KEY,
     task_id integer NOT NULL REFERENCES tasks(id),
-    logs text,
-    status character varying NOT NULL DEFAULT 'running'::character varying,
+    status character varying NOT NULL DEFAULT 'running',
     started_at timestamp with time zone DEFAULT now()
+);
+
+CREATE TABLE logs (
+    id serial PRIMARY KEY,
+    execution_id integer NOT NULL REFERENCES executions(id),
+    time timestamp with time zone DEFAULT now(),
+    message text NOT NULL DEFAULT ''
 );
 
 CREATE VIEW tasks_extended AS
@@ -54,8 +60,8 @@ ORDER BY t.id;
 
 --- INDXES ---
 
-CREATE INDEX parent_id_index on tasks USING btree(parent_id );
-CREATE INDEX execute_at_desc_index on tasks USING btree(execute_at DESC);
+CREATE INDEX on tasks (parent_id, execute_at DESC);
+CREATE INDEX on logs (execution_id, time);
 
 
 --- FUNCTIONS --
