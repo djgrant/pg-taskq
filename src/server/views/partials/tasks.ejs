@@ -4,7 +4,7 @@
   <% if (parent && parent.id !== undefined) { %>
   <a
     class="mr-2"
-    href="<%- locals.mountpath %>tasks/<%- parent.parent_id && `${parent.parent_id}/tasks` %>"
+    href="<%- locals.path(parent.parent_id ? `/tasks/${parent.parent_id}/tasks` : `/tasks`) %>"
     ><span
       class="text-purple-700 text-center text-xs inline-block border-2 rounded-full w-6 h-6"
       >←</span
@@ -21,7 +21,7 @@
     </th>
     <% }) %>
   </thead>
-  <% tasks.forEach(function(task){ %>
+  <% tasks.forEach(task => { %>
   <tr class="<%- task.status === 'pending' && 'text-gray-500' %>">
     <td
       class="p-3 border-t border-gray-300 font-mono text-xs whitespace-no-wrap"
@@ -32,9 +32,7 @@
       class="p-3 border-t border-gray-300 font-mono text-xs whitespace-no-wrap"
     >
       <% if (task.status !== 'pending') { %>
-      <a
-        class="text-purple-700"
-        href="<%- locals.mountpath %>tasks/<%- task.id %>"
+      <a class="text-purple-700" href="<%- locals.path(`/tasks/${task.id}`) %>"
         ><%- task.name %></a
       >
       <% } else { %> <%- task.name %> <% } %>
@@ -65,7 +63,7 @@
       <% if (task.child_tasks > 0) { %>
       <a
         class="text-purple-700"
-        href="<%- locals.mountpath %>tasks/<%- task.id %>/tasks"
+        href="<%- locals.path(`/tasks/${task.id}/tasks`) %>"
       >
         <%- task.child_tasks %> child tasks
       </a>
