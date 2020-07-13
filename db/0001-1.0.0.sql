@@ -51,6 +51,13 @@ SELECT t.id,
 FROM tasks t
 ORDER BY t.id;
 
+
+--- INDXES ---
+
+CREATE INDEX parent_id_index on tasks USING btree(parent_id );
+CREATE INDEX execute_at_desc_index on tasks USING btree(execute_at DESC);
+
+
 --- FUNCTIONS --
 
 CREATE FUNCTION on_task_event () RETURNS TRIGGER AS $$ 
