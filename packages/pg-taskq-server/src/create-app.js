@@ -19,7 +19,7 @@ function createPgTaskqApp(opts = {}) {
   app.use(express.static(path.join(__dirname, "./public")));
 
   app.use((req, res, next) => {
-    app.locals.mountpath = app.mountpath;
+    app.locals.path = (urlPath) => path.join(app.mountpath, urlPath);
     next();
   });
 
@@ -79,7 +79,7 @@ function createPgTaskqApp(opts = {}) {
     }
   });
 
-  app.get("/executions/:executionId/", async (req, res) => {
+  app.get("/tasks/:taskId/executions/:executionId/", async (req, res) => {
     const { executionId } = req.params;
 
     try {
@@ -99,7 +99,7 @@ function createPgTaskqApp(opts = {}) {
     }
   });
 
-  app.get("/api/tasks/:taskId/rerun", async (req, res) => {
+  app.post("/api/tasks/:taskId/execution", async (req, res) => {
     const taskId = req.params.taskId;
 
     try {

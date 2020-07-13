@@ -2,7 +2,7 @@
   <div>
     <a
       class="mr-2"
-      href="<%- locals.mountpath %>tasks/<%- execution.parent_id %>"
+      href="<%- locals.path(execution.parent_id ? `/tasks/${execution.parent_id}` : '/tasks') %>"
       ><span
         class="text-purple-700 text-center text-xs inline-block border-2 rounded-full w-6 h-6"
         >←</span
@@ -28,7 +28,7 @@
   <br />
   <a
     class="text-purple-700"
-    href="<%- locals.mountpath %>tasks/<%- execution.task_id %>/tasks"
+    href="<%- locals.path(`tasks/${execution.task_id}/tasks`) %>"
   >
     Spawned <%- execution.child_tasks %> child tasks
   </a>
@@ -48,15 +48,18 @@
 </div>
 
 <script>
-  const baseUrl = `//${window.location.host}<%- locals.mountpath %>`;
   const rerunButton = document.getElementById("rerun-button");
   const taskId = "<%- execution.task_id %>";
 
-  rerunButton.addEventListener("click", () => {
-    fetch(`${baseUrl}api/tasks/${taskId}/rerun`)
-      .then((res) => res.json())
-      .then(({ id: executionId }) => {
-        window.location = `${baseUrl}executions/${executionId}`;
-      });
-  });
+  if (rerunButton) {
+    rerunButton.addEventListener("click", () => {
+      fetch(`<%- locals.path('/api/tasks/${taskId}/execution') -%>`, {
+        method: "POST",
+      })
+        .then((res) => res.json())
+        .then(({ id: executionId }) => {
+          window.location = `<%- locals.path('/tasks/${taskId}/executions/${executionId}') -%>`;
+        });
+    });
+  }
 </script>
