@@ -16,7 +16,7 @@ class PgTaskQ {
     this.backoffDelay = opts.backoffDelay || "20 seconds";
     this.backoffDecay = opts.backoffDecay || "exponential";
     this.logger = opts.logger || console.log;
-    this.timeout = opts.timeout || "30 seconds";
+    this.timeout = opts.timeout || "5 minutes";
 
     // Private
     this.processQueueEvery = opts.processQueueEvery || 1000;
@@ -27,6 +27,7 @@ class PgTaskQ {
     this.processingQueue = false;
     this.processingPromise = Promise.resolve();
     this.logQ = opts.logQ || [];
+    this.registeredTasks = opts.registeredTasks || [];
 
     if (opts.schema) {
       this.pool.on("connect", (client) =>
@@ -110,6 +111,8 @@ class PgTaskQ {
 
     const take = new Take();
 
+    this.registeredTasks = [...this.registeredTasks, ...taskNames];
+
     taskNames.forEach((taskName) => {
       this.on("timeout", (params) => {
         if (taskName !== params.task.name) return;
@@ -139,7 +142,9 @@ class PgTaskQ {
         const onExecuteCallback = takeCallback || take.onExecuteCallback;
 
         if (taskName !== params.task.name) return;
-        if (typeof onExecuteCallback !== "function") return;
+        if (typeof onExecuteCallback !== "function") {
+          this.log("error")("You must provide a callback to `taskq.take`");
+        }
 
         try {
           if (
@@ -300,9 +305,17 @@ class PgTaskQ {
           backoffDecay: this.backoffDecay,
         })
       );
+
+      const nextTask = rows[0];
       await this.updateTimedOutExecutions();
       await this.processLogs();
-      if (this.started && rows.length) {
+
+      if (nextTask && !this.registeredTasks.includes(nextTask.task_name)) {
+        this.log("error")(
+          `No task handler defined for ${nextTask.task_name}. Create a hander using taskq.take("${nextTask.task_name}", callback).`
+        );
+      }
+      if (this.started && nextTask) {
         await this.processQueue();
       }
     } catch (err) {

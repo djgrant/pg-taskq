@@ -12,7 +12,7 @@ const listen = () => sql`
 
 const processNextTask = ({ maxAttempts, backoffDelay, backoffDecay }) => sql`
     WITH next_tasks AS (
-        SELECT id
+        SELECT id, name
         FROM tasks_extended
         WHERE status != 'success'
             AND status != 'running'
@@ -33,7 +33,7 @@ const processNextTask = ({ maxAttempts, backoffDelay, backoffDecay }) => sql`
     )
     INSERT INTO executions (task_id)
     SELECT id FROM next_tasks LIMIT 1
-    RETURNING id;
+    RETURNING id, (SELECT name FROM next_tasks LIMIT 1) as task_name;
 `;
 
 const selectTimedOutExecutions = ({ timeout }) => sql`
