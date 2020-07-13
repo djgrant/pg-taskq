@@ -23,6 +23,13 @@ function createPgTaskqApp(opts = {}) {
     next();
   });
 
+  app.use((req, res, next) => {
+    res.set("Cache-Control", "no-store");
+    next();
+  });
+
+  app.disable("view cache");
+
   app.get(["/", "/tasks", "/tasks/:id/tasks"], async (req, res) => {
     const { id } = req.params;
 

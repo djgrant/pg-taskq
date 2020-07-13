@@ -62,12 +62,12 @@
     <td
       class="p-3 border-t border-gray-300 font-mono text-xs whitespace-no-wrap"
     >
-      <% if (task.children > 0) { %>
+      <% if (task.child_tasks > 0) { %>
       <a
         class="text-purple-700"
         href="<%- locals.mountpath %>tasks/<%- task.id %>/tasks"
       >
-        <%- task.children %> child tasks
+        <%- task.child_tasks %> child tasks
       </a>
       <% } else { %> No child tasks <% } %>
     </td>

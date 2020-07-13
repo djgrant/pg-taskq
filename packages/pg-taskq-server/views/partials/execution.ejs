@@ -24,13 +24,13 @@
   <p><span class="font-semibold">Status:</span> <%- execution.status %></p>
   <p><span class="font-semibold">Attempts:</span> <%- execution.attempts %></p>
   <p><span class="font-semibold">Started:</span> <%- execution.started_at %></p>
-  <% if (execution.children > 0) { %>
+  <% if (execution.child_tasks > 0) { %>
   <br />
   <a
     class="text-purple-700"
     href="<%- locals.mountpath %>tasks/<%- execution.task_id %>/tasks"
   >
-    Spawned <%- execution.children %> child tasks
+    Spawned <%- execution.child_tasks %> child tasks
   </a>
   <% } %>
 </div>
