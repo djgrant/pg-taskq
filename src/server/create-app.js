@@ -30,15 +30,19 @@ function createTaskqApp(opts = {}) {
 
   app.disable("view cache");
 
-  app.get(["/", "/tasks", "/tasks/:id/tasks"], async (req, res) => {
-    const { id } = req.params;
+  app.get(["/", "/tasks", "/tasks/:parentId/tasks"], async (req, res) => {
+    const { parentId } = req.params;
+    const { status, nesting } = req.query;
 
     try {
       const { rows: tasks } = await pool.query(
-        id ? queries.selectChildTasks({ id }) : queries.selectRootTasks()
+        queries.selectTasks({
+          parentId: nesting === "off" ? undefined : parentId || null,
+          status,
+        })
       );
 
-      if (!id && !tasks.length) {
+      if (!parentId && !tasks.length) {
         res.render("pages/index");
         return;
       }
@@ -50,7 +54,11 @@ function createTaskqApp(opts = {}) {
 
       const {
         rows: [parent],
-      } = await pool.query(queries.selectTask({ id: tasks[0].parent_id }));
+      } = await pool.query(
+        queries.selectTask({
+          id: nesting === "off" ? undefined : tasks[0].parent_id,
+        })
+      );
 
       res.render("pages/index", { tasks, parent });
     } catch (err) {
