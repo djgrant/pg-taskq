@@ -10,14 +10,19 @@ const listen = () => sql`
     LISTEN "taskq:no-op";
 `;
 
-const processNextTask = ({ maxAttempts, backoffDelay, backoffDecay }) => sql`
+const processNextTask = ({
+  backoffDelay,
+  backoffDecay,
+  concurrentExecutions,
+  maxAttempts,
+}) => sql`
     WITH next_tasks AS (
         SELECT id, name
         FROM tasks_extended
         WHERE status != 'success'
             AND status != 'running'
-            AND locked = false
-            AND attempts < ${maxAttempts}
+            AND locked = false AND attempts < ${maxAttempts}
+            AND (SELECT count(id) FROM tasks_extended WHERE status = 'running') < ${concurrentExecutions}
             AND execute_at < now()
             AND (
                 last_executed IS NULL
