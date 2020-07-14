@@ -17,6 +17,7 @@ class TaskQ {
     this.backoffDecay = opts.backoffDecay || "exponential";
     this.logger = opts.logger || console.log;
     this.timeout = opts.timeout || "5 minutes";
+    this.concurrency = opts.concurrency || 10;
 
     // Private
     this.processQueueEvery = opts.processQueueEvery || 1000;
@@ -304,9 +305,10 @@ class TaskQ {
     try {
       const { rows } = await this.pool.query(
         queries.processNextTask({
-          maxAttempts: this.maxAttempts,
           backoffDelay: this.backoffDelay,
           backoffDecay: this.backoffDecay,
+          concurrentExecutions: this.concurrency,
+          maxAttempts: this.maxAttempts,
         })
       );
 
