@@ -1,5 +1,5 @@
 const df = require("date-fns/fp");
-const { setup } = require("./utils");
+const { setup, pause } = require("./utils");
 
 let taskq;
 
@@ -18,6 +18,7 @@ afterAll(async () => {
 
 test("Running event", (done) => {
   taskq.enqueue("Test Task");
+  taskq.take("Test Task", () => {});
   taskq.on("running", ({ task }) => {
     if (task.name === "Test Task") {
       expect(task.status).toEqual("running");
@@ -52,6 +53,7 @@ test("Failure event", (done) => {
 
 test("Pending event", (done) => {
   taskq.enqueue("Test pending");
+  taskq.take("Test pending", () => {});
   taskq.on("pending", ({ task }) => {
     if (task.name === "Test pending") {
       expect(task.status).toEqual("pending");
@@ -62,6 +64,9 @@ test("Pending event", (done) => {
 
 test("Timeout event", (done) => {
   taskq.enqueue("Test timeout");
+  taskq.take("Test timeout", async () => {
+    await pause(1000);
+  });
   taskq.on("timeout", ({ task }) => {
     if (task.name === "Test timeout") {
       expect(task.status).toEqual("timeout");
@@ -72,6 +77,9 @@ test("Timeout event", (done) => {
 
 test("Locked event", (done) => {
   taskq.enqueue("Test locked");
+  taskq.take("Test locked", async () => {
+    await pause(1000);
+  });
   taskq.on("locked", ({ task }) => {
     if (task.name === "Test locked") {
       expect(task.status).toBe("timeout");

@@ -57,7 +57,6 @@ class TaskQ {
     return (...messages) => {
       const message = messages
         .map((message) => {
-          this.log("debug")(message);
           let messageStr;
           if (message === null) messageStr = "null";
           else if (message === undefined) messageStr = "undefined";
@@ -80,11 +79,17 @@ class TaskQ {
 
   getExecutionParams(task) {
     const subTaskQ = this.createSubTaskQ({ parentTask: task });
-    const taskLogger = this.createExecutionLogger({
-      executionId: task.execution_id,
-    });
+    const taskLogger = task.execution_id
+      ? this.createExecutionLogger({
+          executionId: task.execution_id,
+        })
+      : (msg) => {
+          this.log("error")(
+            `log() was called when a task was not running with: ${msg}`
+          );
+        };
 
-    const executionParams = {
+    const params = {
       context: task.context,
       params: task.params,
       taskq: subTaskQ,
@@ -94,12 +99,12 @@ class TaskQ {
 
     const dependencies =
       typeof this.dependencies === "function"
-        ? this.dependencies(executionParams)
+        ? this.dependencies(params)
         : this.dependencies;
 
     return {
       ...dependencies,
-      ...executionParams,
+      ...params,
     };
   }
 
@@ -345,6 +350,7 @@ class TaskQ {
   async processLogs() {
     while (this.logQ.length) {
       const { message, executionId } = this.logQ.shift();
+      this.log("debug")(message);
       await this.pool
         .query(queries.insertLog({ executionId, message }))
         .catch(this.log("error"));
