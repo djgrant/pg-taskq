@@ -1,6 +1,8 @@
 const sql = require("sql-template-strings");
 
-const selectTask = ({ id }) => sql`SELECT * FROM tasks WHERE id = ${id}`;
+const selectTask = ({ id }) => sql`
+  SELECT * FROM tasks WHERE id = ${id}
+`;
 
 const selectLatestExecution = ({ taskId }) => sql`
   SELECT t.*, t.id as task_id, e.*, (
@@ -33,31 +35,31 @@ const selectLogs = ({ executionId }) => sql`
   WHERE execution_id = ${executionId}
 `;
 
-const selectRootTasks = ({ lastItem = 0 } = {}) => sql`
-  SELECT t.id, t.name, t.execute_at, t.status, t.attempts, t.parent_id, (
-    SELECT count(*)::int
-    FROM tasks tt
-    WHERE t.id = tt.parent_id
-  ) AS child_tasks
-  FROM tasks_extended t 
-  WHERE parent_id IS NULL
-  AND id > ${lastItem}
-  ORDER BY execute_at DESC
-  LIMIT 500
-`;
+const selectTasks = ({ parentId, status, lastItem = 0 }) => {
+  const query = sql`
+    SELECT t.id, t.name, t.execute_at, t.status, t.attempts, t.parent_id, (
+      SELECT count(*)::int
+      FROM tasks tt
+      WHERE t.id = tt.parent_id
+    ) AS child_tasks
+    FROM tasks_extended t 
+    WHERE id > ${lastItem}   
+  `;
 
-const selectChildTasks = ({ id, lastItem = 0 }) => sql`
-  SELECT t.id, t.name, t.execute_at, t.status, t.attempts, t.parent_id, (
-    SELECT count(*)::int
-    FROM tasks tt
-    WHERE t.id = tt.parent_id
-  ) AS child_tasks 
-  FROM tasks_extended t 
-  WHERE parent_id = ${id}
-  AND id > ${lastItem}
-  ORDER BY execute_at DESC 
-  LIMIT 500
-`;
+  if (parentId) {
+    query.append(sql`AND parent_id = ${parentId} `);
+  }
+
+  if (parentId === null) {
+    query.append(sql`AND parent_id IS NULL `);
+  }
+
+  if (status) {
+    query.append(sql`AND status = ${status} `);
+  }
+
+  return query.append(sql`ORDER BY execute_at DESC LIMIT 500`);
+};
 
 const rerunTask = ({ taskId }) => sql`
   INSERT INTO executions (task_id) VALUES (${taskId}) RETURNING id;
@@ -67,8 +69,7 @@ module.exports = {
   selectExecution,
   selectLatestExecution,
   selectLogs,
-  selectRootTasks,
-  selectChildTasks,
+  selectTasks,
   selectTask,
   rerunTask,
 };

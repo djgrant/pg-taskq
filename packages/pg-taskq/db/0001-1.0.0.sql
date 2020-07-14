@@ -60,7 +60,7 @@ ORDER BY t.id;
 
 --- INDXES ---
 
-CREATE INDEX on tasks (parent_id, execute_at DESC);
+CREATE INDEX on tasks (id, execute_at DESC, parent_id);
 CREATE INDEX on logs (execution_id, time);
 
 
