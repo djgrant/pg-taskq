@@ -19,6 +19,8 @@ test("executeIn simple interval", async () => {
     executeIn: "1 year",
   });
 
+  taskq.take("Scheduling Task", () => {});
+
   const expectedDate = df.addYears(1, new Date());
 
   expect(execute_at).toMatchDate(expectedDate);
@@ -29,6 +31,8 @@ test("executeIn composite interval", async () => {
     name: "Scheduling Task",
     executeIn: "2 year 3 days 7 minutes",
   });
+
+  taskq.take("Scheduling Task", () => {});
 
   const expectedDate = compose(
     df.addYears(2),
@@ -47,6 +51,8 @@ test("executeAtDateTime", async () => {
     executeAtDateTime: date,
   });
 
+  taskq.take("Scheduling Task", () => {});
+
   expect(execute_at).toEqual(date);
 });
 
@@ -55,6 +61,8 @@ test("executeTodayAt", async () => {
     name: "Scheduling Task",
     executeTodayAt: "12:06",
   });
+
+  taskq.take("Scheduling Task", () => {});
 
   const expectedDate = compose(
     df.addHours(12),
