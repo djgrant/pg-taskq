@@ -78,7 +78,7 @@ class PgTaskQ {
     };
   }
 
-  getExecutionParams(task) {
+  async getExecutionParams(task) {
     const subTaskQ = this.createSubTaskQ({ parentTask: task });
     const taskLogger = task.execution_id
       ? this.createExecutionLogger({
@@ -100,7 +100,7 @@ class PgTaskQ {
 
     const dependencies =
       typeof this.dependencies === "function"
-        ? this.dependencies(params)
+        ? await this.dependencies(params)
         : this.dependencies;
 
     return {
@@ -367,9 +367,9 @@ class PgTaskQ {
       try {
         task = JSON.parse(payload);
       } catch {}
-      this.subscribers.forEach(([event, subscriber]) => {
+      this.subscribers.forEach(async ([event, subscriber]) => {
         if (channel !== event) return;
-        const params = this.getExecutionParams(task);
+        const params = await this.getExecutionParams(task);
         subscriber(params);
       });
     });
