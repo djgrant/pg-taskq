@@ -39,8 +39,20 @@ SELECT t.id,
                 WHERE e.task_id = t.id
                 ORDER BY e.started_at DESC
                 LIMIT 1
-            ), 'pending'::character varying
-        ) AS status
+            ),
+            (
+            	SELECT COALESCE( 
+            		(
+            			SELECT 'scheduled'
+		                FROM tasks
+                		WHERE id = t.id
+                		AND execute_at > now()
+        		        LIMIT 1
+        		    ), 
+            		'pending'
+            	)
+            )
+        )
     ) AS status,
     (
 	    SELECT e.started_at
@@ -97,9 +109,20 @@ $$ LANGUAGE 'plpgsql' VOLATILE;
 
 -- TRIGGERS ---
 
-CREATE TRIGGER on_task_inserted
+CREATE TRIGGER on_task_scheduled
 AFTER INSERT ON tasks
 FOR EACH ROW
+WHEN (
+    NEW.execute_at > now()
+)
+EXECUTE PROCEDURE on_task_event('scheduled');
+
+CREATE TRIGGER on_task_enqueued
+AFTER INSERT ON tasks
+FOR EACH ROW
+WHEN (
+    NEW.execute_at <= now()
+)
 EXECUTE PROCEDURE on_task_event('pending');
 
 CREATE TRIGGER on_task_no_op
