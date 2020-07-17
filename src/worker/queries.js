@@ -1,6 +1,7 @@
 const sql = require("sql-template-strings");
 
 const listen = () => sql`
+    LISTEN "taskq:scheduled";
     LISTEN "taskq:pending";
     LISTEN "taskq:running";
     LISTEN "taskq:failure"; 

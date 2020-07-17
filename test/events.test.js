@@ -62,6 +62,20 @@ test("Pending event", (done) => {
   });
 });
 
+test("Scheduled event", (done) => {
+  taskq.schedule({
+    name: "Test scheduled",
+    executeIn: "10 minutes",
+  });
+  taskq.take("Test scheduled", () => {});
+  taskq.on("scheduled", ({ task }) => {
+    if (task.name === "Test scheduled") {
+      expect(task.status).toEqual("scheduled");
+      done();
+    }
+  });
+});
+
 test("Timeout event", (done) => {
   taskq.enqueue("Test timeout");
   taskq.take("Test timeout", async () => {

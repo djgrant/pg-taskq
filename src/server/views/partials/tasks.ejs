@@ -22,7 +22,9 @@
     <% }) %>
   </thead>
   <% tasks.forEach(task => { %>
-  <tr class="<%- task.status === 'pending' && 'text-gray-500' %>">
+  <tr
+    class="<%- (['pending', 'scheduled'].includes(task.status)) && 'text-gray-500' %>"
+  >
     <td
       class="p-3 border-t border-gray-300 font-mono text-xs whitespace-no-wrap"
     >
@@ -31,7 +33,7 @@
     <td
       class="p-3 border-t border-gray-300 font-mono text-xs whitespace-no-wrap"
     >
-      <% if (task.status !== 'pending') { %>
+      <% if (!['pending', 'scheduled'].includes(task.status)) { %>
       <a class="text-purple-700" href="<%- locals.path(`/tasks/${task.id}`) %>"
         ><%- task.name %></a
       >
