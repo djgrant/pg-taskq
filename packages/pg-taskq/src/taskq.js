@@ -17,7 +17,7 @@ class PgTaskQ {
     this.backoffDecay = opts.backoffDecay || "exponential";
     this.logger = opts.logger || console.log;
     this.timeout = opts.timeout || "5 minutes";
-    this.concurrency = opts.concurrency || 10;
+    this.concurrency = opts.concurrency || 1;
 
     // Private
     this.processQueueEvery = opts.processQueueEvery || 1000;
@@ -45,12 +45,12 @@ class PgTaskQ {
     return new PgTaskQ(Object.assign({}, this, { parentTask }));
   }
 
-  log(level = "info", msg) {
-    const log = (msg) => {
+  log(level = "info", ...messages) {
+    const log = (...messages) => {
       if (getLogLevel(level) > getLogLevel(this.logLevel)) return;
-      this.logger(`[TaskQ:${level}]:`, msg);
+      this.logger(`[TaskQ:${level}]:`, ...messages);
     };
-    if (msg) return log(msg);
+    if (messages.length) return log(...messages);
     return log;
   }
 
@@ -116,9 +116,13 @@ class PgTaskQ {
 
     const take = new Take();
 
-    this.registeredTasks = [...this.registeredTasks, ...taskNames];
-
     taskNames.forEach((taskName) => {
+      this.registeredTasks.push({
+        name: taskName,
+        take,
+        callback: takeCallback,
+      });
+
       this.on("timeout", (params) => {
         if (taskName !== params.task.name) return;
         if (typeof take.onTimeoutCallback !== "function") return;
@@ -145,7 +149,6 @@ class PgTaskQ {
 
       this.on("running", async (params) => {
         const onExecuteCallback = takeCallback || take.onExecuteCallback;
-
         if (taskName !== params.task.name) return;
         if (typeof onExecuteCallback !== "function") {
           this.log("error")("You must provide a callback to `taskq.take`");
@@ -267,6 +270,58 @@ class PgTaskQ {
       .catch(this.log("error"));
   }
 
+  async debug(taskNameOrTask, task) {
+    task =
+      typeof taskNameOrTask === "string"
+        ? (task = { name: taskNameOrTask, ...task })
+        : taskNameOrTask;
+
+    const registeredTask = this.registeredTasks.find(
+      ({ name }) => name === task.name
+    );
+
+    if (!registeredTask) return;
+
+    const onExecuteCallback =
+      registeredTask.callback || registeredTask.take.onExecuteCallback;
+
+    const log = this.log.bind(this);
+
+    const debugTaskQ = new Proxy(new Object(), {
+      get(_, prop) {
+        log("debug", `No-op: taskq.${prop} disabled in debugger`);
+        return (...args) => {
+          log("debug", `taskq.${prop} called with`, ...args);
+        };
+      },
+    });
+
+    const params = {
+      context: task.context,
+      params: task.params,
+      task: {
+        ...task,
+        status: "running",
+        locked: false,
+        execute_at: new Date(),
+        last_executed: new Date(),
+        attempts: 1,
+      },
+      taskq: debugTaskQ,
+      log: this.logger,
+    };
+
+    const dependencies =
+      typeof this.dependencies === "function"
+        ? await this.dependencies(params)
+        : this.dependencies;
+
+    onExecuteCallback({
+      ...dependencies,
+      ...params,
+    });
+  }
+
   start() {
     if (this.started) {
       throw new Error("taskq.run() should only be invoked once per process");
@@ -316,7 +371,10 @@ class PgTaskQ {
       await this.updateTimedOutExecutions();
       await this.processLogs();
 
-      if (nextTask && !this.registeredTasks.includes(nextTask.task_name)) {
+      if (
+        nextTask &&
+        !this.registeredTasks.find(({ name }) => name === nextTask.task_name)
+      ) {
         this.log("error")(
           `No task handler defined for ${nextTask.task_name}. Create a hander using taskq.take("${nextTask.task_name}", callback).`
         );
@@ -352,7 +410,6 @@ class PgTaskQ {
   async processLogs() {
     while (this.logQ.length) {
       const { message, executionId } = this.logQ.shift();
-      this.log("debug")(message);
       await this.pool
         .query(queries.insertLog({ executionId, message }))
         .catch(this.log("error"));
