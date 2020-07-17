@@ -55,7 +55,11 @@ const selectTasks = ({ parentId, status, lastItem = 0 }) => {
   }
 
   if (status) {
-    query.append(sql`AND status = ${status} `);
+    if (status.startsWith("!")) {
+      query.append(sql`AND status != ${status.slice(1)} `);
+    } else {
+      query.append(sql`AND status = ${status} `);
+    }
   }
 
   return query.append(sql`ORDER BY execute_at DESC LIMIT 500`);
