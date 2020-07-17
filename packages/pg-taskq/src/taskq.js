@@ -19,9 +19,9 @@ class PgTaskQ {
     this.logger = opts.logger || console.log;
     this.timeout = opts.timeout || "5 minutes";
     this.concurrency = opts.concurrency || 1;
+    this.processQueueEvery = opts.processQueueEvery || 100;
 
     // Private
-    this.processQueueEvery = opts.processQueueEvery || 1000;
     this.parentTask = opts.parentTask || null;
     this.pool = opts.pool || new Pool(opts.db);
     this.started = opts.started || false;

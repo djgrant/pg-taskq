@@ -20,20 +20,21 @@ const processNextTask = ({
     WITH next_tasks AS (
         SELECT id, name
         FROM tasks_extended
-        WHERE status != 'success'
-            AND status != 'running'
-            AND locked = false AND attempts < ${maxAttempts}
-            AND (SELECT count(id) FROM tasks_extended WHERE status = 'running') < ${concurrentExecutions}
-            AND execute_at < now()
-            AND (
-                last_executed IS NULL
-                OR CASE WHEN ${backoffDecay} = 'exponential'
-                THEN
-                    last_executed + (${backoffDelay}::interval * attempts * attempts) < now()
-                ELSE
-                    last_executed + (${backoffDelay}::interval * attempts) < now()
-                END
-            )
+        WHERE (SELECT count(*) FROM tasks_extended WHERE status = 'running') < ${concurrentExecutions}
+        AND status != 'running'
+        AND status != 'scheduled'
+        AND status != 'success'
+        AND locked = false 
+        AND attempts < ${maxAttempts}
+        AND (
+            last_executed IS NULL
+            OR CASE WHEN ${backoffDecay} = 'exponential'
+            THEN
+                last_executed + (${backoffDelay}::interval * attempts * attempts) < now()
+            ELSE
+                last_executed + (${backoffDelay}::interval * attempts) < now()
+            END
+        )
         ORDER BY execute_at
         FOR UPDATE SKIP LOCKED
     )
