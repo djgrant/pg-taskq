@@ -1,4 +1,5 @@
 const { Pool } = require("pg");
+const { serializeError } = require("serialize-error");
 const { getLogLevel, getStartOfToday } = require("./utils");
 const { Take } = require("./take");
 const queries = require("./queries");
@@ -56,25 +57,13 @@ class TaskQ {
 
   createExecutionLogger({ executionId }) {
     return (...messages) => {
-      const message = messages
-        .map((message) => {
-          let messageStr;
-          if (message === null) messageStr = "null";
-          else if (message === undefined) messageStr = "undefined";
-          else if (message instanceof Error)
-            messageStr = message.stack || message.toString();
-          else {
-            try {
-              messageStr = JSON.stringify(message);
-            } catch {
-              messageStr = message.toString();
-            }
-          }
-          return messageStr;
-        })
-        .join("");
-
-      this.logQ.push({ message, executionId });
+      messages.forEach((msg) => this.log("debug", msg));
+      messages
+        .map(serializeError)
+        .map(JSON.stringify)
+        .forEach((message) => {
+          this.logQ.push({ message, executionId });
+        });
     };
   }
 
