@@ -57,7 +57,9 @@ class PgTaskQ {
 
   createExecutionLogger({ executionId }) {
     return (...messages) => {
-      messages.forEach((msg) => this.log("debug", msg));
+      messages.forEach((msg) =>
+        this.log("debug", `[Execution: ${executionId}]:`, msg)
+      );
       messages
         .map(serializeError)
         .map(JSON.stringify)
@@ -397,12 +399,13 @@ class PgTaskQ {
   }
 
   async processLogs() {
-    while (this.logQ.length) {
-      const { message, executionId } = this.logQ.shift();
-      await this.pool
-        .query(queries.insertLog({ executionId, message }))
-        .catch(this.log("error"));
-    }
+    if (this.logQ.length === 0) return;
+    const logs = this.logQ;
+    this.logQ = [];
+    await this.pool.query(queries.insertLogs({ logs })).catch((err) => {
+      this.logQ = [...logs, this.logQ];
+      this.log("error", err);
+    });
   }
 
   async setUpEventListeners() {

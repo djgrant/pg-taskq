@@ -130,10 +130,14 @@ const updateExecutionTimeout = ({ id, maxAttempts }) => sql`
     AND ( SELECT attempts FROM tasks_extended WHERE id = ( SELECT task_id FROM updated) ) >= ${maxAttempts};
 `;
 
-const insertLog = ({ executionId, message }) => sql`
-    INSERT INTO logs (execution_id, message)
-    VALUES (${executionId}, ${message});
-`;
+const insertLogs = ({ logs }) => {
+  const query = sql`INSERT INTO logs (execution_id, message) VALUES `;
+  logs.forEach(({ executionId, message }, i) => {
+    if (i > 0) query.append(", ");
+    query.append(sql`(${executionId}, ${message})`);
+  });
+  return query;
+};
 
 module.exports = {
   listen,
@@ -145,5 +149,5 @@ module.exports = {
   updateExecutionSuccess,
   updateExecutionFailure,
   updateExecutionTimeout,
-  insertLog,
+  insertLogs,
 };
