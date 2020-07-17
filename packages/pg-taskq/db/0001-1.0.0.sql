@@ -20,7 +20,7 @@ CREATE TABLE logs (
     id serial PRIMARY KEY,
     execution_id integer NOT NULL REFERENCES executions(id),
     time timestamp with time zone DEFAULT now(),
-    message text NOT NULL DEFAULT ''
+    message jsonb
 );
 
 CREATE VIEW tasks_extended AS

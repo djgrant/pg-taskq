@@ -25,11 +25,11 @@ it("logs various types of data in order", (done) => {
       sql`SELECT message FROM logs WHERE execution_id = ${task.execution_id}`
     );
     expect(result.rows).toEqual([
-      { message: "null" },
-      { message: '"one"' },
-      { message: '{"two":3}' },
-      { message: '["four","five"]' },
-      { message: "6" },
+      { message: null },
+      { message: "one" },
+      { message: { two: 3 } },
+      { message: ["four", "five"] },
+      { message: 6 },
     ]);
     done();
   });
@@ -43,7 +43,7 @@ it("logs errors passed explicitly to logger", (done) => {
     const result = await taskq.pool.query(
       sql`SELECT message FROM logs WHERE execution_id = ${task.execution_id}`
     );
-    expect(result.rows[0].message).toMatch(/^Error: Something went wrong/);
+    expect(result.rows[0].message.message).toEqual("Something went wrong");
     done();
   });
 });
@@ -59,8 +59,8 @@ it("logs error throw within a task execution", (done) => {
       const result = await taskq.pool.query(
         sql`SELECT message FROM logs WHERE execution_id = ${task.execution_id}`
       );
-      expect(result.rows[0].message).toMatch(
-        /^Error: Something went wrong in the task/
+      expect(result.rows[0].message.message).toEqual(
+        "Something went wrong in the task"
       );
       done();
     });

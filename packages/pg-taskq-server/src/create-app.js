@@ -2,6 +2,7 @@ const path = require("path");
 const express = require("express");
 const pg = require("pg");
 const queries = require("./queries");
+const { formatLog } = require("./utils");
 
 const app = express();
 
@@ -84,7 +85,7 @@ function createPgTaskqApp(opts = {}) {
         queries.selectLogs({ executionId: execution.id })
       );
 
-      res.render("pages/execution", { execution, logs });
+      res.render("pages/execution", { execution, logs: logs.map(formatLog) });
     } catch (err) {
       console.log(err);
       res.sendStatus(500);
@@ -108,7 +109,7 @@ function createPgTaskqApp(opts = {}) {
         queries.selectLogs({ executionId })
       );
 
-      res.render("pages/execution", { execution, logs });
+      res.render("pages/execution", { execution, logs: logs.map(formatLog) });
     } catch (err) {
       console.log(err);
       res.sendStatus(500);
