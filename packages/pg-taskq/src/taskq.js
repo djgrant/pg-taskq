@@ -20,14 +20,14 @@ class PgTaskQ {
     this.timeout = opts.timeout || "5 minutes";
     this.concurrency = opts.concurrency || 1;
     this.processQueueEvery = opts.processQueueEvery || 100;
+    this.pool = opts.pool || new Pool(opts.db);
 
     // Private
     this.parentTask = opts.parentTask || null;
-    this.pool = opts.pool || new Pool(opts.db);
     this.started = opts.started || false;
     this.subscribers = opts.subscribers || [];
-    this.processingQueue = false;
-    this.processingPromise = Promise.resolve();
+    this.processingQueue = opts.processingQueue || false;
+    this.processingPromise = opts.processingPromise || Promise.resolve();
     this.logQ = opts.logQ || [];
     this.registeredTasks = opts.registeredTasks || [];
 
@@ -76,7 +76,8 @@ class PgTaskQ {
           executionId: task.execution_id,
         })
       : (msg) => {
-          this.log("error")(
+          this.log(
+            "error",
             `log() was called when a task was not running with: ${msg}`
           );
         };
@@ -142,7 +143,7 @@ class PgTaskQ {
         const onExecuteCallback = takeCallback || take.onExecuteCallback;
         if (taskName !== params.task.name) return;
         if (typeof onExecuteCallback !== "function") {
-          this.log("error")("You must provide a callback to `taskq.take`");
+          this.log("error", "You must provide a callback to `taskq.take`");
         }
 
         try {
@@ -233,7 +234,8 @@ class PgTaskQ {
       insertQuery = queries.insertTaskToExecuteAtDateTime;
     }
     if (executionParameters > 1) {
-      this.log("warn")(
+      this.log(
+        "warn",
         `Task ${task.name} has conflicting parameters for scheduling execution. Choose one of executeAt|executeIn|executeTodayAt.`
       );
     }
@@ -338,7 +340,7 @@ class PgTaskQ {
           if (++failures > 2) {
             process.exit(1);
           } else {
-            this.log("error")("Failed to process queue. Retrying...");
+            this.log("error", "Failed to process queue. Retrying...");
           }
           setTimeout(ticker, this.processQueueEvery);
         });
@@ -366,7 +368,8 @@ class PgTaskQ {
         nextTask &&
         !this.registeredTasks.find(({ name }) => name === nextTask.task_name)
       ) {
-        this.log("error")(
+        this.log(
+          "error",
           `No task handler defined for ${nextTask.task_name}. Create a hander using taskq.take("${nextTask.task_name}", callback).`
         );
       }
@@ -374,7 +377,7 @@ class PgTaskQ {
         await this.processQueue();
       }
     } catch (err) {
-      this.log("error")(err);
+      this.log("error", err);
     }
   }
 
@@ -394,7 +397,7 @@ class PgTaskQ {
         )
       );
     } catch (err) {
-      this.log("error")(err);
+      this.log("error", err);
     }
   }
 
@@ -425,33 +428,32 @@ class PgTaskQ {
   }
 
   setUpInfoLogging() {
+    const logInfo = this.log("info");
     this.on("pending", ({ task }) => {
-      this.log("info")(`Enqueued task "${task.name}" (task id: ${task.id})`);
+      logInfo(`Enqueued task "${task.name}" (task id: ${task.id})`);
     });
     this.on("running", ({ task }) => {
-      this.log("info")(
+      logInfo(
         `Executing task "${task.name}" (execution id: ${task.execution_id})`
       );
     });
     this.on("timeout", ({ task }) => {
-      this.log("info")(
+      logInfo(
         `Task "${task.name}" timed out after ${this.timeout} (execution id: ${task.execution_id})`
       );
     });
     this.on("failure", ({ task }) => {
-      this.log("info")(
+      logInfo(
         `Task "${task.name}" failed to execute (execution id: ${task.execution_id})`
       );
     });
     this.on("success", ({ task }) => {
-      this.log("info")(
+      logInfo(
         `Task "${task.name}" successfully executed (execution id: ${task.execution_id})`
       );
     });
     this.on("no-op", ({ task }) => {
-      this.log("info")(
-        `Already enqueued task "${task.name}" (task id: ${task.id})`
-      );
+      logInfo(`Already enqueued task "${task.name}" (task id: ${task.id})`);
     });
   }
 
@@ -462,7 +464,7 @@ class PgTaskQ {
       this.notificationClient.end();
       this.pool.end();
     } else {
-      console.log("Can't stop TaskQ. Not currently running.");
+      this.log("info", "Can't stop TaskQ. Not currently running.");
     }
   }
 }
