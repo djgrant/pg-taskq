@@ -45,6 +45,16 @@
   <pre><code><%= JSON.stringify(execution.context, null, 2) %></code></pre>
 </div>
 
+<div class="p-3 border-b border-gray-300 text-sm">
+  <h3 class="font-semibold text-sm text-gray-700">Debug template</h3>
+  <pre><code>
+taskq.debug("<%- execution.name %>", {
+  params: <%= JSON.stringify(execution.params, null, 2) %>,
+  context: <%= JSON.stringify(execution.context, null, 2) %>
+});
+  </code></pre>
+</div>
+
 <div class="p-3 text-sm">
   <h3 class="font-semibold text-sm text-gray-700">Logs</h3>
   <% logs.forEach(log => { %>
