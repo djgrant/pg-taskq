@@ -37,7 +37,7 @@ taskq
   .take("Async task")
   .onExecute(async ({ log, params }) => {
     log("Running task");
-    log(JSON.stringify(params));
+    log(params);
     await Promise.resolve();
   })
   .onSuccess(({ task, taskq }) => {
@@ -58,8 +58,8 @@ taskq
 
 taskq
   .take("Timeout Task", () => new Promise(() => {}))
-  .onTimeout(() => {
-    console.log("Task timed out");
+  .onTimeout(({ log }) => {
+    log("Task timed out");
   });
 
 taskq.on("success", (task) => {});

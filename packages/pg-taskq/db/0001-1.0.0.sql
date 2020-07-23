@@ -79,6 +79,50 @@ CREATE INDEX on logs (execution_id, time);
 
 --- FUNCTIONS --
 
+CREATE FUNCTION descendant_tasks(parent_id int) RETURNS setof tasks_extended 
+AS $$
+	WITH RECURSIVE child_tasks AS (
+		SELECT * FROM tasks_extended 
+			WHERE CASE WHEN $1 IS NULL 
+			THEN 
+				parent_id IS NULL 
+			ELSE 
+				parent_id = $1 
+			END
+		UNION ALL
+		SELECT t.* FROM tasks_extended t, child_tasks c WHERE t.parent_id = c.id
+	) 
+	SELECT * FROM child_tasks;
+$$ 
+LANGUAGE SQL IMMUTABLE;
+
+CREATE FUNCTION descendant_task_counts(parent_id int) RETURNS TABLE (
+	total bigint, 
+    scheduled bigint, 
+    pending bigint, 
+    running bigint, 
+    failure bigint, 
+    timeout bigint, 
+    success bigint
+) 
+AS $$
+	WITH child_tasks AS (
+		SELECT * FROM descendant_tasks($1)
+	)
+	SELECT
+		(SELECT count(*) FROM child_tasks),
+		(SELECT count(*) FROM child_tasks WHERE status = 'scheduled'),
+		(SELECT count(*) FROM child_tasks WHERE status = 'pending'),
+		(SELECT count(*) FROM child_tasks WHERE status = 'running'),
+		(SELECT count(*) FROM child_tasks WHERE status = 'failure'),
+		(SELECT count(*) FROM child_tasks WHERE status = 'timeout'),
+		(SELECT count(*) FROM child_tasks WHERE status = 'success');
+$$ 
+LANGUAGE SQL IMMUTABLE;
+
+
+--- FUNCTIONS (TRIGGERS) --
+
 CREATE FUNCTION on_task_event () RETURNS TRIGGER AS $$ 
 DECLARE
     event varchar := TG_ARGV[0];

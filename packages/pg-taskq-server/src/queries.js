@@ -62,8 +62,12 @@ const selectTasks = ({ parentId, status, lastItem = 0 }) => {
     }
   }
 
-  return query.append(sql`ORDER BY execute_at DESC LIMIT 500`);
+  return query.append(sql`ORDER BY execute_at DESC LIMIT 100`);
 };
+
+const selectCounts = ({ parentId }) => sql`
+  SELECT * FROM descendant_task_counts(${parentId})
+`;
 
 const rerunTask = ({ taskId }) => sql`
   INSERT INTO executions (task_id) VALUES (${taskId}) RETURNING id;
@@ -75,5 +79,6 @@ module.exports = {
   selectLogs,
   selectTasks,
   selectTask,
+  selectCounts,
   rerunTask,
 };

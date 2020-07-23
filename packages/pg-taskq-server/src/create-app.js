@@ -61,7 +61,11 @@ function createPgTaskqApp(opts = {}) {
         })
       );
 
-      res.render("pages/index", { tasks, parent });
+      const {
+        rows: [counts],
+      } = await pool.query(queries.selectCounts({ parentId }));
+
+      res.render("pages/index", { tasks, parent, counts });
     } catch (err) {
       console.log(err);
       res.sendStatus(500);
