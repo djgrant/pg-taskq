@@ -1,7 +1,7 @@
 {
   "private": "true",
   "name": "demo",
-  "version": "1.0.0",
+  "version": "1.0.0-alpha.2",
   "scripts": {
     "start": "run-p server worker -l",
     "server": "node server",

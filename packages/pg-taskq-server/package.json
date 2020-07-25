@@ -1,6 +1,6 @@
 {
   "name": "pg-taskq-server",
-  "version": "1.0.0-alpha.0",
+  "version": "1.0.0-alpha.2",
   "description": "Dashboard server for pg-taskq",
   "author": "Daniel Grant <hello@danielgrant.co>",
   "repository": "github:djgrant/pg-taskq",
