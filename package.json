@@ -1,12 +1,16 @@
 {
   "private": "true",
+  "name": "pg-taskq",
   "scripts": {
     "demo": "yarn workspace demo start",
-    "test": "yarn workspace pg-taskq test"
+    "test": "lerna run test --stream"
   },
   "workspaces": [
     "demo",
     "packages/pg-taskq",
     "packages/pg-taskq-server"
-  ]
+  ],
+  "devDependencies": {
+    "lerna": "^3.22.1"
+  }
 }
