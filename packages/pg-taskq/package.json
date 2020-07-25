@@ -7,6 +7,8 @@
   "main": "./src/index.js",
   "bin": "./bin/taskq.sh",
   "files": [
+    "bin",
+    "db",
     "src"
   ],
   "scripts": {
