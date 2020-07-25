@@ -1,0 +1,23 @@
+{
+  "name": "pg-taskq-server",
+  "version": "0.0.0",
+  "description": "Dashboard server for pg-taskq",
+  "author": "Daniel Grant <hello@danielgrant.co>",
+  "repository": "github:djgrant/pg-taskq",
+  "main": "./src/index.js",
+  "files": [
+    "src",
+    "views",
+    "public"
+  ],
+  "scripts": {
+    "test": "jest"
+  },
+  "dependencies": {
+    "pg": "^8.2.1",
+    "ejs": "^3.1.3",
+    "express": "^4.17.1",
+    "serialize-error": "^7.0.1",
+    "sql-template-strings": "^2.2.2"
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "name": "pg-taskq",
+  "version": "0.0.0",
+  "description": "A Postgres backed task queue for NodeJS",
+  "author": "Daniel Grant <hello@danielgrant.co>",
+  "repository": "github:djgrant/pg-taskq",
+  "main": "./src/index.js",
+  "bin": "./bin/taskq.sh",
+  "files": [
+    "src"
+  ],
+  "scripts": {
+    "test": "jest"
+  },
+  "dependencies": {
+    "@djgrant/postgres-migrations": "^4.1.0-rc.1",
+    "pg": "^8.2.1",
+    "prompts": "^2.3.2",
+    "serialize-error": "^7.0.1",
+    "sql-template-strings": "^2.2.2",
+    "yargs": "^15.3.1"
+  },
+  "devDependencies": {
+    "@databases/pg-test": "^2.0.0",
+    "date-fns": "^2.14.0",
+    "jest": "^26.1.0",
+    "lodash": "^4.17.15"
+  }
+}

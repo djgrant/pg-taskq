@@ -1,4 +1,4 @@
-const { PgTaskQ } = require("../");
+const { PgTaskQ } = require("pg-taskq");
 
 const taskq = new PgTaskQ({
   logLevel: "debug",

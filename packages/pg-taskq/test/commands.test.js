@@ -9,7 +9,7 @@ afterAll(() => {
 });
 
 it("Runs migrations", async () => {
-  await exec(`./packages/pg-taskq/bin/up.js -f -c ${connectionString}`).catch(console.log);
+  await exec(`./bin/up.js -f -c ${connectionString}`).catch(console.log);
   const result = await client.query(`
     SELECT table_name FROM information_schema.tables 
     WHERE table_schema = 'public'
@@ -25,7 +25,7 @@ it("Runs migrations", async () => {
 });
 
 it("Runs migrations in a provided schema", async () => {
-  await exec(`./packages/pg-taskq/bin/up.js -f -c ${connectionString} -s schema_test`).catch(
+  await exec(`./bin/up.js -f -c ${connectionString} -s schema_test`).catch(
     console.log
   );
   const result = await client.query(`
@@ -47,7 +47,7 @@ it("Clears the tasks queue", async () => {
     INSERT INTO tasks ("name") VALUES ('Test Task');
     INSERT INTO executions ("task_id") VALUES (1);
   `);
-  await exec(`./packages/pg-taskq/bin/clear.js -f -c ${connectionString}`).catch(console.log);
+  await exec(`./bin/clear.js -f -c ${connectionString}`).catch(console.log);
   const result = await client.query(
     `SELECT t.*, e.* FROM tasks t, executions e`
   );
@@ -59,7 +59,7 @@ it("Clears the tasks queue from a provided schema", async () => {
     INSERT INTO schema_test.tasks ("name") VALUES ('Test Task');
     INSERT INTO schema_test.executions ("task_id") VALUES (1);
   `);
-  await exec(`./packages/pg-taskq/bin/clear.js -f -c ${connectionString} -s schema_test`).catch(
+  await exec(`./bin/clear.js -f -c ${connectionString} -s schema_test`).catch(
     console.log
   );
   const result = await client.query(

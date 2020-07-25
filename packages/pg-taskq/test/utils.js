@@ -1,7 +1,7 @@
 const cp = require("child_process");
 const util = require("util");
 const pg = require("pg");
-const { PgTaskQ } = require("../../../");
+const { PgTaskQ } = require("pg-taskq");
 
 const exec = util.promisify(cp.exec);
 
@@ -9,7 +9,7 @@ const connectionString = process.env.DATABASE_URL;
 const client = new pg.Client({ connectionString });
 
 const migrate = (schema) =>
-  exec(`./packages/pg-taskq/bin/taskq.sh up -f -c ${connectionString} -s ${schema}`);
+  exec(`./bin/taskq.sh up -f -c ${connectionString} -s ${schema}`);
 
 const setup = async (opts) => {
   await migrate(opts.schema);

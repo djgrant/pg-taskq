@@ -1,5 +1,5 @@
 const { setup } = require("./utils");
-const { PgTaskQ } = require("../../../");
+const { PgTaskQ } = require("pg-taskq");
 
 let taskq;
 
