@@ -1,6 +1,7 @@
 {
   "private": "true",
   "name": "demo",
+  "version": "1.0.0",
   "scripts": {
     "start": "run-p server worker -l",
     "server": "node server",
@@ -9,7 +10,7 @@
   "dependencies": {
     "express": "^4.17.1",
     "npm-run-all": "^4.1.5",
-    "pg-taskq": "1.0.0",
-    "pg-taskq-server": "1.0.0"
+    "pg-taskq": "1.0.0-alpha.1",
+    "pg-taskq-server": "1.0.0-alpha.2"
   }
 }
