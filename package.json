@@ -3,11 +3,15 @@
   "name": "pg-taskq",
   "scripts": {
     "demo": "yarn workspace demo start",
-    "test": "lerna run test --stream"
+    "build": "lerna run build",
+    "test": "lerna run test --stream",
+    "up": "pg-taskq up -s taskq",
+    "clear": "pg-taskq clear -s taskq"
   },
   "workspaces": [
     "demo",
     "packages/pg-taskq",
+    "packages/pg-taskq-graphql",
     "packages/pg-taskq-server"
   ],
   "devDependencies": {

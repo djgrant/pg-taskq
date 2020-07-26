@@ -6,6 +6,6 @@ const taskqApp = createPgTaskqApp({ schema: "taskq" });
 
 app.use(taskqApp);
 
-app.listen(3000);
+app.listen(3002);
 
-console.log("Server running at http://localhost:3000");
+console.log("Server running at http://localhost:3002");

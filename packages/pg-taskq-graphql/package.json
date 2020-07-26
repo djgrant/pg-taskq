@@ -1,0 +1,15 @@
+{
+  "name": "pg-taskq-graphql",
+  "version": "1.0.0-alpha.2",
+  "description": "GraphQL API for pg-taskq",
+  "author": "Daniel Grant <hello@danielgrant.co>",
+  "repository": "github:djgrant/pg-taskq",
+  "main": "./src/index.js",
+  "files": [
+    "src"
+  ],
+  "dependencies": {
+    "@graphile-contrib/pg-simplify-inflector": "^6.0.0",
+    "postgraphile": "^4.7.0"
+  }
+}
