@@ -10,7 +10,7 @@ const selectLatestExecution = ({ taskId }) => sql`
     FROM tasks tt
     WHERE t.id = tt.parent_id
   ) AS child_tasks 
-  FROM executions e, tasks_extended t
+  FROM executions e, extended_tasks t
   WHERE e.task_id = ${taskId} 
   AND t.id = e.task_id 
   ORDER BY started_at DESC
@@ -23,7 +23,7 @@ const selectExecution = ({ executionId }) => sql`
     FROM tasks tt
     WHERE t.id = tt.parent_id
   ) AS child_tasks 
-  FROM executions e, tasks_extended t
+  FROM executions e, extended_tasks t
   WHERE e.id = ${executionId}
   AND t.id = e.task_id 
   LIMIT 1
@@ -42,7 +42,7 @@ const selectTasks = ({ parentId, status, lastItem = 0 }) => {
       FROM tasks tt
       WHERE t.id = tt.parent_id
     ) AS child_tasks
-    FROM tasks_extended t 
+    FROM extended_tasks t 
     WHERE id > ${lastItem}   
   `;
 

@@ -17,10 +17,10 @@ it("Runs migrations", async () => {
   `);
   expect(result.rows.map((table) => table.table_name)).toEqual([
     "executions",
+    "extended_tasks",
     "logs",
     "migrations",
     "tasks",
-    "tasks_extended",
   ]);
 });
 
@@ -35,10 +35,10 @@ it("Runs migrations in a provided schema", async () => {
   `);
   expect(result.rows.map((table) => table.table_name)).toEqual([
     "executions",
+    "extended_tasks",
     "logs",
     "migrations",
     "tasks",
-    "tasks_extended",
   ]);
 });
 

@@ -19,8 +19,8 @@ const processNextTask = ({
 }) => sql`
     WITH next_tasks AS (
         SELECT id, name
-        FROM tasks_extended
-        WHERE (SELECT count(*) FROM tasks_extended WHERE status = 'running') < ${concurrentExecutions}
+        FROM extended_tasks
+        WHERE (SELECT count(*) FROM extended_tasks WHERE status = 'running') < ${concurrentExecutions}
         AND status != 'running'
         AND status != 'scheduled'
         AND status != 'success'
@@ -114,7 +114,7 @@ const updateExecutionFailure = ({ id, maxAttempts }) => sql`
     UPDATE tasks
     SET locked = true
     WHERE id = ( SELECT task_id FROM updated) 
-    AND ( SELECT attempts FROM tasks_extended WHERE id = ( SELECT task_id FROM updated) ) >= ${maxAttempts};
+    AND ( SELECT tasks_attempts(tasks) FROM tasks WHERE id = ( SELECT task_id FROM updated) ) >= ${maxAttempts};
 `;
 
 const updateExecutionTimeout = ({ id, maxAttempts }) => sql`
@@ -127,7 +127,7 @@ const updateExecutionTimeout = ({ id, maxAttempts }) => sql`
     UPDATE tasks
     SET locked = true
     WHERE id = ( SELECT task_id FROM updated) 
-    AND ( SELECT attempts FROM tasks_extended WHERE id = ( SELECT task_id FROM updated) ) >= ${maxAttempts};
+    AND ( SELECT tasks_attempts(tasks) FROM tasks WHERE id = ( SELECT task_id FROM updated) ) >= ${maxAttempts};
 `;
 
 const insertLogs = ({ logs }) => {

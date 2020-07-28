@@ -23,66 +23,79 @@ CREATE TABLE logs (
     message jsonb
 );
 
-CREATE VIEW tasks_extended AS
-SELECT t.id,
-    t.parent_id,
-    t.name,
-    t.params,
-    t.context,
-    t.execute_at,
-    t.locked,
-    (
-        SELECT COALESCE(
-            (
-                SELECT e.status
-                FROM executions e
-                WHERE e.task_id = t.id
-                ORDER BY e.started_at DESC
-                LIMIT 1
-            ),
-            (
-            	SELECT COALESCE( 
-            		(
-            			SELECT 'scheduled'
-		                FROM tasks
-                		WHERE id = t.id
-                		AND execute_at > now()
-        		        LIMIT 1
-        		    ), 
-            		'pending'
-            	)
-            )
-        )
-    ) AS status,
-    (
-	    SELECT e.started_at
-	    FROM executions e
-	    WHERE e.task_id = t.id
-	    ORDER BY e.started_at DESC
-	    LIMIT 1
-    ) AS last_executed,
-    (
-        SELECT count(*)::int
-        FROM executions e
-        WHERE e.task_id = t.id
-    ) AS attempts
-FROM tasks t
-ORDER BY t.id;
 
+--- TYPES ---
+
+CREATE TYPE counts AS (
+    running BIGINT,
+    success BIGINT,
+    failure BIGINT,
+    pending BIGINT,
+    timeout BIGINT,
+    scheduled BIGINT,
+    total BIGINT
+);
 
 --- INDXES ---
 
 CREATE INDEX on executions (task_id, started_at DESC);
+CREATE INDEX on tasks (id, parent_id);
 CREATE INDEX on tasks (id, execute_at DESC, parent_id);
 CREATE INDEX on logs (execution_id, time);
 
 
 --- FUNCTIONS --
 
-CREATE FUNCTION descendant_tasks(parent_id int) RETURNS setof tasks_extended 
-AS $$
+
+CREATE FUNCTION tasks_status(t tasks) RETURNS VARCHAR AS $$
+   SELECT COALESCE(
+        (
+            SELECT e.status
+            FROM executions e
+            WHERE e.task_id = t.id
+            ORDER BY e.started_at DESC
+            LIMIT 1
+        ),
+        (
+            SELECT COALESCE( 
+                (
+                    SELECT 'scheduled'
+                    FROM tasks
+                    WHERE id = t.id
+                    AND execute_at > now()
+                    LIMIT 1
+                ), 
+                'pending'
+            )
+        )
+    )
+$$ 
+LANGUAGE SQL STABLE;
+
+CREATE FUNCTION tasks_last_executed(t tasks) RETURNS TIMESTAMP WITH TIME ZONE AS $$
+    SELECT e.started_at
+    FROM executions e
+    WHERE e.task_id = t.id
+    ORDER BY e.started_at DESC
+    LIMIT 1 
+$$ 
+LANGUAGE SQL STABLE;
+
+CREATE FUNCTION tasks_attempts(t tasks) RETURNS INTEGER AS $$
+    SELECT count(*)::integer
+    FROM executions e
+    WHERE e.task_id = t.id
+$$ 
+LANGUAGE SQL STABLE;
+
+CREATE FUNCTION tasks_children(t tasks) RETURNS SETOF tasks AS $$ 
+    SELECT * FROM tasks WHERE parent_id = t.id ORDER BY id ASC;
+$$ 
+LANGUAGE SQL STABLE;
+
+CREATE FUNCTION descendant_tasks(task_id int) RETURNS setof tasks AS $$
 	WITH RECURSIVE child_tasks AS (
-		SELECT * FROM tasks_extended 
+		SELECT * FROM tasks
 			WHERE CASE WHEN $1 IS NULL 
 			THEN 
 				parent_id IS NULL 
@@ -90,35 +103,52 @@ AS $$
 				parent_id = $1 
 			END
 		UNION ALL
-		SELECT t.* FROM tasks_extended t, child_tasks c WHERE t.parent_id = c.id
+		SELECT t.* FROM tasks t, child_tasks c WHERE t.parent_id = c.id
 	) 
 	SELECT * FROM child_tasks;
 $$ 
-LANGUAGE SQL IMMUTABLE;
-
-CREATE FUNCTION descendant_task_counts(parent_id int) RETURNS TABLE (
-	total bigint, 
-    scheduled bigint, 
-    pending bigint, 
-    running bigint, 
-    failure bigint, 
-    timeout bigint, 
-    success bigint
-) 
-AS $$
+LANGUAGE SQL STABLE;
+	
+CREATE FUNCTION descendant_tasks_counts(task_id int) RETURNS counts AS $$
 	WITH child_tasks AS (
-		SELECT * FROM descendant_tasks($1)
+		SELECT * FROM descendant_tasks(task_id) t INNER JOIN executions e ON t.id = e.task_id
 	)
 	SELECT
-		(SELECT count(*) FROM child_tasks),
-		(SELECT count(*) FROM child_tasks WHERE status = 'scheduled'),
-		(SELECT count(*) FROM child_tasks WHERE status = 'pending'),
 		(SELECT count(*) FROM child_tasks WHERE status = 'running'),
+		(SELECT count(*) FROM child_tasks WHERE status = 'success'),
 		(SELECT count(*) FROM child_tasks WHERE status = 'failure'),
+		(SELECT count(*) FROM child_tasks WHERE status = 'pending'),
 		(SELECT count(*) FROM child_tasks WHERE status = 'timeout'),
-		(SELECT count(*) FROM child_tasks WHERE status = 'success');
+		(SELECT count(*) FROM child_tasks WHERE status = 'scheduled'),
+		(SELECT count(*) FROM child_tasks);
 $$ 
-LANGUAGE SQL IMMUTABLE;
+LANGUAGE SQL STABLE;
+
+CREATE FUNCTION tasks_descendants(t tasks) RETURNS SETOF tasks AS $$
+	SELECT * FROM descendant_tasks(t.id)
+$$ 
+LANGUAGE SQL stable;
+
+CREATE FUNCTION tasks_descendant_counts(t tasks) RETURNS counts AS $$
+	SELECT * FROM descendant_tasks_counts(t.id)
+$$ 
+LANGUAGE SQL STABLE;
+
+--- VIEWS --
+
+CREATE VIEW extended_tasks AS
+SELECT t.id,
+    t.parent_id,
+    t.name,
+    t.params,
+    t.context,
+    t.execute_at,
+    t.locked,
+    tasks_status(t) AS status,
+    tasks_last_executed(t) AS last_executed,
+    tasks_attempts(t) AS attempts
+FROM tasks t
+ORDER BY t.id;
 
 
 --- FUNCTIONS (TRIGGERS) --
@@ -128,28 +158,30 @@ DECLARE
     event varchar := TG_ARGV[0];
     task text := (
         SELECT row_to_json(t) FROM (
-            SELECT * FROM tasks_extended WHERE id = NEW.id
+            SELECT * FROM extended_tasks WHERE id = NEW.id
         ) t
     );
 BEGIN 
     PERFORM pg_notify(CONCAT('taskq:', event), task);
     RETURN NEW;
 END;
-$$ LANGUAGE 'plpgsql' VOLATILE;
+$$ 
+LANGUAGE 'plpgsql' VOLATILE;
 
 CREATE FUNCTION on_task_status_change () RETURNS TRIGGER AS $$ 
 DECLARE
     event varchar := NEW.status;
     task text := (
         SELECT row_to_json(t) FROM (
-            SELECT *, NEW.id as execution_id FROM tasks_extended WHERE id = NEW.task_id
+            SELECT *, NEW.id as execution_id FROM extended_tasks WHERE id = NEW.task_id
         ) t
     );
 BEGIN 
     PERFORM pg_notify(CONCAT('taskq:', event), task);
     RETURN NEW;
 END;
-$$ LANGUAGE 'plpgsql' VOLATILE;
+$$ 
+LANGUAGE 'plpgsql' VOLATILE;
 
 
 -- TRIGGERS ---
