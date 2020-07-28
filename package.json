@@ -11,10 +11,15 @@
   "workspaces": [
     "demo",
     "packages/pg-taskq",
+    "packages/pg-taskq-dashboard",
     "packages/pg-taskq-graphql",
     "packages/pg-taskq-server"
   ],
   "devDependencies": {
     "lerna": "^3.22.1"
-  }
+  },
+  "nohoist": [
+    "**/react-scripts",
+    "**/react-scripts/**"
+  ]
 }
