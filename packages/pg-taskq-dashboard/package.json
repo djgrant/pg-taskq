@@ -10,25 +10,27 @@
   "scripts": {
     "prebuild": "npm run build:tailwind",
     "build:tailwind": "tailwindcss build src/assets/tailwind.css -o src/assets/tailwind.output.css",
+    "generate": "gqless generate --typescript",
     "build": "react-scripts build",
     "prestart": "npm run build:tailwind",
     "start": "react-scripts start"
   },
   "dependencies": {
-    "@djgrant/components": "^0.1.4",
+    "@djgrant/components": "^0.2.0",
+    "@gqless/react": "^0.0.1-alpha.28",
     "@reach/router": "^1.3.4",
     "@tailwindcss/custom-forms": "^0.2.1",
     "@tailwindcss/typography": "^0.2.0",
     "animate.css": "^4.1.0",
     "dayjs": "^1.8.30",
-    "graphql": "^15.3.0",
+    "gqless": "^0.0.1-alpha.29",
     "react": "^16.13.1",
     "react-dom": "^16.13.1",
     "react-scripts": "3.4.1",
-    "tailwindcss": "^1.5.1",
-    "urql": "^1.9.8"
+    "tailwindcss": "^1.5.1"
   },
   "devDependencies": {
+    "@gqless/cli": "^0.0.1-alpha.31",
     "@types/jest": "^26.0.7",
     "@types/node": "^14.0.26",
     "@types/reach__router": "^1.3.5",

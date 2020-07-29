@@ -1,6 +1,6 @@
-import React from "react";
+import React, { Suspense } from "react";
 import { Router } from "@reach/router";
-import { Heading, Input, Tabs, Tab } from "@djgrant/components";
+import { H1, Input, Tabs, Tab } from "@djgrant/components";
 import { Tasks } from "./tasks";
 import { Sidebar } from "./sidebar";
 
@@ -8,9 +8,7 @@ export const App = () => (
   <div className="h-screen">
     <header className="flex bg-blue-400">
       <div className="w-64 px-6 py-4 border-r-2 border-blue-500">
-        <Heading h1 className="text-white">
-          pg-taskq
-        </Heading>
+        <H1 className="text-white">pg-taskq</H1>
       </div>
       <div className="flex items-center px-4 opacity-75">
         <Input type="search" placeholder="Todo..." disabled />
@@ -32,9 +30,11 @@ export const App = () => (
             <Tab to="/logs">Logs</Tab>
           </Tabs>
         </div>
-        <Router>
-          <Tasks path="tasks" default />
-        </Router>
+        <Suspense fallback={<span>Loading...</span>}>
+          <Router>
+            <Tasks path="tasks" default />
+          </Router>
+        </Suspense>
       </main>
     </div>
   </div>

@@ -1,9 +1,11 @@
+const path = require("path");
 const { postgraphile } = require("postgraphile");
 const simplifyInflectorPlugin = require("@graphile-contrib/pg-simplify-inflector");
+const customPlugins = require("./plugins");
 
 function createPgTaskqGraphql(opts = {}) {
   return postgraphile(opts.db || {}, opts.schema, {
-    appendPlugins: [simplifyInflectorPlugin],
+    appendPlugins: [simplifyInflectorPlugin, customPlugins],
     enhanceGraphiql: true,
     graphileBuildOptions: { pgOmitListSuffix: true },
     graphiql: true,
