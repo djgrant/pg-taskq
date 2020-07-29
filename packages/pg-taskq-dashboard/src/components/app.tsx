@@ -16,7 +16,7 @@ export const App = () => (
     </header>
 
     <div className="flex h-full">
-      <div className="w-64 py-6 pr-6 border-r-2 border-gray-200">
+      <div className="w-64 py-6 pr-4 border-r-2 border-gray-200">
         <Sidebar />
       </div>
 
@@ -30,7 +30,7 @@ export const App = () => (
             <Tab to="/logs">Logs</Tab>
           </Tabs>
         </div>
-        <Suspense fallback={<span>Loading...</span>}>
+        <Suspense fallback={<span className="text-gray-600">Loading...</span>}>
           <Router>
             <Tasks path="tasks" default />
           </Router>

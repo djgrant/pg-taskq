@@ -37,7 +37,7 @@ export const Tasks: React.FC<RouteComponentProps> = () => {
   return (
     <>
       <Header className="mb-3 -mt-1">
-        <div className="w-1/4">Started</div>
+        <div className="w-1/4">Start time</div>
         <div className="w-1/3">Name</div>
         <div className="w-1/6">Status</div>
         <div className="w-1/4">Progress</div>
@@ -75,14 +75,8 @@ export const TaskRows = graphql(() => {
         ))}
       </div>
       <div className="flex justify-end mt-6">
-        {false && (
-          <Button type="outline" size="sm">
-            ← Newer
-          </Button>
-        )}
-        <Button type="outline" size="sm">
-          Older →
-        </Button>
+        {false && <Button size="sm">← Newer</Button>}
+        <Button size="sm">Older →</Button>
       </div>
     </>
   );
