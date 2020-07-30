@@ -22,7 +22,7 @@ export const Sidebar = () => (
       const taskId = match?.taskId ? Number(match.taskId) || null : null;
       return (
         <div className="space-y-4">
-          <h3 className="flex items-center justify-between mt-1 mb-6 ml-6 text-xl font-medium text-gray-500 font-heading">
+          <h3 className="flex items-center justify-between mt-1 mb-6 ml-6 text-xl font-medium text-pink-600 font-heading">
             <TaskName taskId={taskId} />
             <UpButton taskId={taskId} />
           </h3>
