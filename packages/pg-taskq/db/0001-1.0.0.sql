@@ -96,6 +96,15 @@ CREATE FUNCTION tasks_children(t tasks) RETURNS SETOF tasks AS $$
 $$ 
 LANGUAGE SQL STABLE;
 
+CREATE FUNCTION tasks_latest_execution(inputTask tasks) RETURNS executions AS $$
+	SELECT e.*
+	FROM executions e, tasks t
+    WHERE e.task_id = inputTask.id
+    AND t.id = e.task_id 
+    ORDER BY started_at DESC
+    LIMIT 1;
+$$ LANGUAGE SQL STABLE;
+
 CREATE FUNCTION descendant_tasks(task_id int) RETURNS setof extended_tasks AS $$
 	WITH RECURSIVE child_tasks AS (
 		SELECT * FROM extended_tasks

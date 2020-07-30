@@ -3,9 +3,11 @@ const {
   makePluginByCombiningPlugins
 } = require("graphile-utils");
 const simplifyInflectorPlugin = require("@graphile-contrib/pg-simplify-inflector");
+const PostGraphileDerivedFieldPlugin = require("postgraphile-plugin-derived-field");
 
 module.exports = makePluginByCombiningPlugins(
   simplifyInflectorPlugin,
+  PostGraphileDerivedFieldPlugin,
   makeChangeNullabilityPlugin({
     Task: {
       children: false,

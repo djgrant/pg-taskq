@@ -496,6 +496,7 @@ type t_Task = FieldsType<
       (t_Task | null)[]
     >;
     lastExecuted?: t_Datetime | null;
+    latestExecution?: t_Execution | null;
     status?: t_String | null;
   },
   Extension<"Task">
@@ -708,6 +709,7 @@ type t_Log = FieldsType<
      * Reads a single `Execution` that is related to this `Log`.
      */
     execution?: t_Execution | null;
+    messageParsed?: t_String | null;
   },
   Extension<"Log">
 >;

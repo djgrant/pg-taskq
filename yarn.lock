@@ -12399,6 +12399,11 @@ postgraphile-core@4.7.0:
     graphile-build "4.7.0"
     graphile-build-pg "4.7.0"
 
+postgraphile-plugin-derived-field@^1.0.0-alpha.7:
+  version "1.0.0-alpha.7"
+  resolved "https://registry.yarnpkg.com/postgraphile-plugin-derived-field/-/postgraphile-plugin-derived-field-1.0.0-alpha.7.tgz#65e0150c5869fc73e25ab71b7d9ec1b5d677e6b7"
+  integrity sha512-kLhtUFOBvjgLhnVPTojVzvs3E3UN44fO4s/izZZ0cxvnEGwQSFVzQWgTiq6SBvJCAhH+pWCW83jomj4hzYI3Rw==
+
 postgraphile@^4.7.0:
   version "4.7.0"
   resolved "https://registry.yarnpkg.com/postgraphile/-/postgraphile-4.7.0.tgz#b6ec4ca5762b5d78c5b6c53b29a26fc89a4445e0"

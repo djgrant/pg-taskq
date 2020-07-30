@@ -882,6 +882,9 @@ export const schema = {
         get lastExecuted() {
           return new FieldNode(schema.Datetime, undefined, true);
         },
+        get latestExecution() {
+          return new FieldNode(schema.Execution, undefined, true);
+        },
         get status() {
           return new FieldNode(schema.String, undefined, true);
         }
@@ -1069,6 +1072,9 @@ export const schema = {
         },
         get execution() {
           return new FieldNode(schema.Execution, undefined, true);
+        },
+        get messageParsed() {
+          return new FieldNode(schema.String, undefined, true);
         }
       },
       { name: "Log", extension: ((extensions as any) || {}).Log }
