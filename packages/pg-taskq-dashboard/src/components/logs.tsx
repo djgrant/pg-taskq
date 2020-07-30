@@ -7,8 +7,10 @@ import dayjs from "dayjs";
 type LogsProps = RouteComponentProps<{ taskId: string }>;
 
 export const LogsInner: React.FC<LogsProps> = graphql(({ taskId }) => {
-  const logs = query.task({ id: Number(taskId) })?.latestExecution?.logs;
-  usePoll(logs, 1000);
+  const task = query.task({ id: Number(taskId) });
+  usePoll(task, 1000);
+
+  const logs = task?.latestExecution?.logs;
 
   if (!logs || !logs[0]?.id) {
     return <div className="text-gray-700">No logs</div>;
@@ -16,7 +18,7 @@ export const LogsInner: React.FC<LogsProps> = graphql(({ taskId }) => {
 
   return (
     <div className="bg-gray-100 border rounded">
-      {logs?.map((log, i) => (
+      {logs.map((log, i) => (
         <div
           className={` px-3 py-2 text-sm ${i > 0 &&
             "border-t"} hover:bg-gray-200`}
