@@ -51,6 +51,12 @@ export const Tasks: React.FC<TasksProps> = observer(
       return <div className="text-gray-700">No tasks</div>;
     }
 
+    // Warm up cache for sidebar
+    tasks.forEach((task) => {
+      query.task({ id: task.id })!.name = task.name;
+      query.task({ id: task.id })!.parentId = task.parentId;
+    });
+
     return (
       <>
         <div className="space-y-3">
@@ -61,9 +67,6 @@ export const Tasks: React.FC<TasksProps> = observer(
                   key={task.id}
                   to={`/tasks/${String(task.id)}`}
                   className="block"
-                  onClick={() =>
-                    (query.task({ id: task.id })!.name = task.name)
-                  }
                 >
                   <Row>
                     <div className="w-1/4 overflow-hidden font-normal">
@@ -89,7 +92,7 @@ export const Tasks: React.FC<TasksProps> = observer(
           )}
         </div>
         {tasks.length > 14 && (
-          <div className="flex justify-end mt-6">
+          <div className="flex justify-end my-6">
             {false && <Button size="sm">← Newer</Button>}
             <Button size="sm" disabled>
               Older →

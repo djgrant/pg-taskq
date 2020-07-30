@@ -25,7 +25,9 @@ export const App = () => (
 
       <div className="flex h-full">
         <div className="w-64 py-6 pr-4 border-r-2 border-gray-200">
-          <Sidebar />
+          <Suspense fallback="">
+            <Sidebar />
+          </Suspense>
         </div>
 
         <main className="flex-grow px-6 py-2">

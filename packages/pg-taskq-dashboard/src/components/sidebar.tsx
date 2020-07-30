@@ -1,9 +1,10 @@
 import React, { Suspense } from "react";
-import { Match } from "@reach/router";
+import { Link, Match } from "@reach/router";
 import { Badge, H6, Label, Input, Tabs, Tab } from "@djgrant/components";
 import { graphql, usePoll } from "@gqless/react";
 import { observer } from "mobx-react";
 import { query } from "../graphql";
+import { Up } from "./icons";
 
 export const counts = {
   total: { label: "All", color: "blue" },
@@ -21,8 +22,9 @@ export const Sidebar = () => (
       const taskId = match?.taskId ? Number(match.taskId) || null : null;
       return (
         <div className="space-y-4">
-          <h3 className="mx-6 mt-1 mb-6 text-xl font-medium text-gray-500 font-heading">
+          <h3 className="flex items-center justify-between mt-1 mb-6 ml-6 text-xl font-medium text-gray-500 font-heading">
             <TaskName taskId={taskId} />
+            <UpButton taskId={taskId} />
           </h3>
           <Tabs direction="vertical">
             {Object.entries(counts).map(([key, { label, color }], i) => (
@@ -78,9 +80,26 @@ const LiveCount = observer(
   })
 );
 
+const trimName = (str: string) => {
+  if (str.length > 19) {
+    return str.slice(0, 17) + "...";
+  }
+  return str;
+};
+
 const TaskName = graphql(({ taskId }: { taskId: number | null }) => {
   if (!taskId) return "Root tasks";
-  return query.task({ id: taskId })?.name;
+  return trimName(query.task({ id: taskId })?.name || "");
+});
+
+const UpButton = graphql(({ taskId }: { taskId: number | null }) => {
+  if (!taskId) return null;
+  const parentId = query.task({ id: taskId })?.parentId;
+  return (
+    <Link to={`/tasks/${parentId || "root"}`} title="Up one level">
+      <Up className="w-6 h-6" />
+    </Link>
+  );
 });
 
 const DescendantsForm = observer(() => {
