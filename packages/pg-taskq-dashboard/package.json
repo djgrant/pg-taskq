@@ -8,6 +8,7 @@
     "server"
   ],
   "scripts": {
+    "prepare": "npm run build",
     "prebuild": "npm run build:tailwind",
     "build:tailwind": "tailwindcss build src/assets/tailwind.css -o src/assets/tailwind.output.css",
     "generate": "gqless generate --typescript",
