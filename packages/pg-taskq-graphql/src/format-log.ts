@@ -1,12 +1,12 @@
-const { deserializeError } = require("serialize-error");
+import { deserializeError } from "serialize-error";
 
-const getErrorMeta = err =>
+const getErrorMeta = (err: Error) =>
   Object.entries(err).reduce(
     (acc, [k, v]) => Object.assign(acc, { [k]: v }),
     {}
   );
 
-const formatLogMessage = message => {
+export const formatLogMessage = (message: any) => {
   if (
     message !== null &&
     typeof message === "object" &&
@@ -26,5 +26,3 @@ const formatLogMessage = message => {
 
   return message;
 };
-
-module.exports = { formatLogMessage };

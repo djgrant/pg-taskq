@@ -1,9 +1,8 @@
-const path = require("path");
-const { postgraphile } = require("postgraphile");
-const plugins = require("./plugins");
-const { formatLogMessage } = require("./format-log");
+import { postgraphile } from "postgraphile";
+import plugins from "./plugins";
+import { formatLogMessage } from "./format-log";
 
-function createPgTaskqGraphql(opts = {}) {
+export function createPgTaskqGraphql(opts: { db?: any; schema?: string } = {}) {
   return postgraphile(opts.db || {}, opts.schema, {
     appendPlugins: [plugins],
     enhanceGraphiql: true,
@@ -13,7 +12,7 @@ function createPgTaskqGraphql(opts = {}) {
     simpleCollections: "both",
     watchPg: process.env.NODE_ENV !== "production",
     pgSettings: () => ({
-      search_path: opts.schema,
+      search_path: opts.schema
     }),
     graphileBuildOptions: {
       pgOmitListSuffix: true,
@@ -22,15 +21,13 @@ function createPgTaskqGraphql(opts = {}) {
           identifiers: [
             {
               table: opts.schema ? `${opts.schema}.logs` : "logs",
-              columns: ["message"],
-            },
+              columns: ["message"]
+            }
           ],
           inflect: () => "messageParsed",
-          resolve: (val) => formatLogMessage(val),
-        },
-      ],
-    },
+          resolve: (val: string) => formatLogMessage(val)
+        }
+      ]
+    }
   });
 }
-
-module.exports = { createPgTaskqGraphql };

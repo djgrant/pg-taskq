@@ -1,11 +1,11 @@
-const {
+import {
   makeChangeNullabilityPlugin,
   makePluginByCombiningPlugins
-} = require("graphile-utils");
-const simplifyInflectorPlugin = require("@graphile-contrib/pg-simplify-inflector");
-const PostGraphileDerivedFieldPlugin = require("postgraphile-plugin-derived-field");
+} from "graphile-utils";
+import simplifyInflectorPlugin from "@graphile-contrib/pg-simplify-inflector";
+import PostGraphileDerivedFieldPlugin from "postgraphile-plugin-derived-field";
 
-module.exports = makePluginByCombiningPlugins(
+export default makePluginByCombiningPlugins(
   simplifyInflectorPlugin,
   PostGraphileDerivedFieldPlugin,
   makeChangeNullabilityPlugin({

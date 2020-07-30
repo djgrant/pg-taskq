@@ -4,13 +4,35 @@
   "description": "GraphQL API for pg-taskq",
   "author": "Daniel Grant <hello@danielgrant.co>",
   "repository": "github:djgrant/pg-taskq",
-  "main": "./src/index.js",
+  "main": "dist/index.js",
+  "module": "dist/pg-taskq-gql.esm.js",
+  "typings": "dist/index.d.ts",
   "files": [
-    "src"
+    "dist"
   ],
+  "scripts": {
+    "start": "tsdx watch",
+    "build": "tsdx build",
+    "lint": "tsdx lint",
+    "prepare": "tsdx build"
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "tsdx lint"
+    }
+  },
   "dependencies": {
     "@graphile-contrib/pg-simplify-inflector": "^6.0.0",
     "postgraphile": "^4.7.0",
     "postgraphile-plugin-derived-field": "^1.0.0-alpha.7"
+  },
+  "devDependencies": {
+    "husky": "^4.2.5",
+    "tsdx": "^0.13.2",
+    "tslib": "^2.0.0",
+    "typescript": "^3.9.7"
+  },
+  "engines": {
+    "node": ">=10"
   }
 }
