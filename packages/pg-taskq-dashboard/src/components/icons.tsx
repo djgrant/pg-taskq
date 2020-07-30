@@ -3,9 +3,9 @@ import React from "react";
 export const LeftChevron: React.FC<JSX.IntrinsicElements["svg"]> = props => (
   <svg
     fill="none"
-    stroke-linecap="round"
-    stroke-linejoin="round"
-    stroke-width="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    strokeWidth="2"
     viewBox="0 0 24 24"
     stroke="currentColor"
     {...props}
@@ -17,9 +17,9 @@ export const LeftChevron: React.FC<JSX.IntrinsicElements["svg"]> = props => (
 export const Up: React.FC<JSX.IntrinsicElements["svg"]> = props => (
   <svg
     fill="none"
-    stroke-linecap="round"
-    stroke-linejoin="round"
-    stroke-width="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    strokeWidth="2"
     viewBox="0 0 24 24"
     stroke="currentColor"
     {...props}
