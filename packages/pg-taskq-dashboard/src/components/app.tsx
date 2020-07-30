@@ -34,7 +34,7 @@ export const App = () => (
           </div>
           <Suspense fallback={loading.text}>
             <Router>
-              <Tasks path="tasks/:taskId/tasks/*" />
+              <Tasks path="tasks/:taskId/tasks/:status" />
               <Info path="tasks/:taskId/info" />
               <Logs path="tasks/:taskId/logs" />
               <Redirect from="/tasks" to="/tasks/root/tasks" noThrow />

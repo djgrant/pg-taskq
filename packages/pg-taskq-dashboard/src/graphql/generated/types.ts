@@ -206,6 +206,7 @@ type t_Query = FieldsType<
         before?: any | null;
         after?: any | null;
         orderBy?: ExtendedTasksOrderBy[] | null;
+        condition?: ExtendedTaskCondition | null;
       },
       t_ExtendedTasksConnection
     >;
@@ -219,6 +220,7 @@ type t_Query = FieldsType<
         first?: number | null;
         offset?: number | null;
         orderBy?: ExtendedTasksOrderBy[] | null;
+        condition?: ExtendedTaskCondition | null;
       },
       t_ExtendedTask[]
     >;
@@ -1010,6 +1012,7 @@ export type TaskCondition = {
   context?: { [K: string]: any } | null;
   executeAt?: any | null;
   locked?: boolean | null;
+  status?: string | null;
 };
 
 /**

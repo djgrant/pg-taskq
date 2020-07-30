@@ -1,5 +1,5 @@
 import React from "react";
-import { RouteComponentProps, Link } from "@reach/router";
+import { RouteComponentProps, Link, useParams } from "@reach/router";
 import { Button, Progress } from "@djgrant/components";
 import { tw } from "@djgrant/react-tailwind";
 import dayjs from "dayjs";
@@ -51,11 +51,14 @@ export const Tasks: React.FC<TasksProps> = (props) => {
 };
 
 export const TaskRows = graphql(({ taskId }: { taskId: number | null }) => {
+  const params = useParams();
   const queryParams = {
     taskId,
     first: 15,
     orderBy: [ExtendedTasksOrderBy.LAST_EXECUTED_DESC],
+    condition: params.status === "total" ? null : { status: params.status },
   };
+
   const tasks = query.descendantTasks(queryParams);
   usePoll(tasks, 5000);
   return (

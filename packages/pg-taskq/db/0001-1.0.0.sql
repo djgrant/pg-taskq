@@ -71,6 +71,7 @@ CREATE FUNCTION tasks_status(t tasks) RETURNS VARCHAR AS $$
     )
 $$ 
 LANGUAGE SQL STABLE;
+COMMENT ON FUNCTION tasks_status IS '@filterable';
 
 CREATE FUNCTION tasks_last_executed(t tasks) RETURNS TIMESTAMP WITH TIME ZONE AS $$
     SELECT e.started_at
@@ -110,8 +111,7 @@ CREATE FUNCTION descendant_tasks(task_id int) RETURNS setof extended_tasks AS $$
 	SELECT * FROM child_tasks;
 $$ 
 LANGUAGE SQL STABLE;
-
-COMMENT ON FUNCTION descendant_tasks IS '@sortable';
+COMMENT ON FUNCTION descendant_tasks IS E'@sortable\n@filterable';
 	
 CREATE FUNCTION descendant_tasks_counts(task_id int) RETURNS counts AS $$
 	WITH child_tasks AS (

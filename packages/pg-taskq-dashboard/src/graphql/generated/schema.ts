@@ -433,6 +433,9 @@ export const schema = {
                   new ArrayNode(schema.ExtendedTasksOrderBy, true),
                   true
                 );
+              },
+              get condition() {
+                return new ArgumentsField(schema.ExtendedTaskCondition, true);
               }
             }),
             false
@@ -456,6 +459,9 @@ export const schema = {
                   new ArrayNode(schema.ExtendedTasksOrderBy, true),
                   true
                 );
+              },
+              get condition() {
+                return new ArgumentsField(schema.ExtendedTaskCondition, true);
               }
             }),
             false
@@ -1339,6 +1345,9 @@ export const schema = {
         },
         get locked() {
           return new InputNodeField(schema.Boolean, true);
+        },
+        get status() {
+          return new InputNodeField(schema.String, true);
         }
       },
       { name: "TaskCondition" }
