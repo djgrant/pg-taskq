@@ -31,14 +31,14 @@ const Row = tw.div(
 type TasksProps = RouteComponentProps<{ taskId?: string }>;
 
 export const Tasks: React.FC<TasksProps> = observer(
-  graphql((props) => {
+  graphql(props => {
     const taskId = props.taskId ? Number(props.taskId) || null : null;
     const params = useParams();
     const queryParams = {
       taskId,
       first: 15,
       orderBy: [TasksOrderBy.LAST_EXECUTED_DESC],
-      condition: params.status === "total" ? null : { status: params.status },
+      condition: params.status === "total" ? null : { status: params.status }
     };
     const { descendants } = query.local.searchForm;
     const tasksQuery =
@@ -51,17 +51,11 @@ export const Tasks: React.FC<TasksProps> = observer(
       return <div className="text-gray-700">No tasks</div>;
     }
 
-    // Warm up cache for sidebar
-    tasks.forEach((task) => {
-      query.task({ id: task.id })!.name = task.name;
-      query.task({ id: task.id })!.parentId = task.parentId;
-    });
-
     return (
       <>
         <div className="space-y-3">
           {tasks.map(
-            (task) =>
+            task =>
               task?.id && (
                 <Link
                   key={task.id}
@@ -76,10 +70,8 @@ export const Tasks: React.FC<TasksProps> = observer(
                     </div>
                     <div className="w-1/3">{task.name}</div>
                     <div
-                      className={`w-1/6 text-${
-                        task.status &&
-                        counts[task.status as keyof typeof counts].color
-                      }-500`}
+                      className={`w-1/6 text-${task.status &&
+                        counts[task.status as keyof typeof counts].color}-500`}
                     >
                       {task.status && capitalize(task.status)}
                     </div>
