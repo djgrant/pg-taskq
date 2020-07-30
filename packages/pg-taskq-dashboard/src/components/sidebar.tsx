@@ -13,7 +13,7 @@ export const counts = {
   running: { label: "Running", color: "indigo" },
   success: { label: "Successful", color: "green" },
   failure: { label: "Failed", color: "red" },
-  timeout: { label: "Timed out", color: "orange" },
+  timeout: { label: "Timed out", color: "orange" }
 };
 
 export const Sidebar = () => (
@@ -81,8 +81,8 @@ const LiveCount = observer(
 );
 
 const trimName = (str: string) => {
-  if (str.length > 19) {
-    return str.slice(0, 17) + "...";
+  if (str.length > 18) {
+    return str.slice(0, 16) + "...";
   }
   return str;
 };
@@ -112,7 +112,7 @@ const DescendantsForm = observer(() => {
           name="descendants"
           value="all"
           checked={searchForm.descendants === "all"}
-          onChange={(e) => {
+          onChange={() => {
             searchForm.descendants = "all";
           }}
         />
@@ -124,7 +124,7 @@ const DescendantsForm = observer(() => {
           name="descendants"
           value="direct"
           checked={searchForm.descendants === "direct"}
-          onChange={(e) => {
+          onChange={() => {
             searchForm.descendants = "direct";
           }}
         />

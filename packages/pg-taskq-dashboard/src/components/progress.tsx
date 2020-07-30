@@ -1,4 +1,5 @@
 import React from "react";
+import { Link } from "@reach/router";
 import { Progress } from "@djgrant/components";
 import { graphql } from "@gqless/react";
 import { TasksEdge } from "../graphql";
@@ -65,6 +66,10 @@ export const DescendantTaskProgress: React.FC<ProgressProps> = graphql(
         .filter(v => v.pc > 0);
     }
 
-    return <Progress size="sm" bars={bars} children={text} />;
+    return (
+      <Link to={`/tasks/${String(task!.id)}/tasks`}>
+        <Progress size="sm" bars={bars} children={text} />
+      </Link>
+    );
   }
 );
