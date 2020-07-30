@@ -1,11 +1,11 @@
 import React from "react";
-import { RouteComponentProps } from "@reach/router";
+import { RouteComponentProps, Link } from "@reach/router";
 import { Button, Progress } from "@djgrant/components";
 import { tw } from "@djgrant/react-tailwind";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 import { graphql, usePoll } from "@gqless/react";
-import { query, ExtendedTasksOrderBy } from "../graphql";
+import { query, TasksOrderBy } from "../graphql";
 
 dayjs.extend(relativeTime);
 
@@ -33,7 +33,10 @@ const Header = tw.div(
   "text-gray-500"
 );
 
-export const Tasks: React.FC<RouteComponentProps> = () => {
+type TasksProps = RouteComponentProps<{ taskId?: string }>;
+
+export const Tasks: React.FC<TasksProps> = (props) => {
+  const taskId = props.taskId ? Number(props.taskId) || null : null;
   return (
     <>
       <Header className="mb-3 -mt-1">
@@ -42,42 +45,52 @@ export const Tasks: React.FC<RouteComponentProps> = () => {
         <div className="w-1/6">Status</div>
         <div className="w-1/4">Progress</div>
       </Header>
-      <TaskRows />
+      <TaskRows taskId={taskId} />
     </>
   );
 };
 
-export const TaskRows = graphql(() => {
+export const TaskRows = graphql(({ taskId }: { taskId: number | null }) => {
   const queryParams = {
+    taskId,
     first: 15,
-    orderBy: [ExtendedTasksOrderBy.LAST_EXECUTED_DESC],
+    orderBy: [TasksOrderBy.LAST_EXECUTED_DESC],
   };
-  usePoll(query.extendedTasks(queryParams), 5000);
+  const tasks = query.descendantTasks(queryParams);
+  usePoll(tasks, 5000);
   return (
     <>
       <div className="space-y-3">
-        {query.extendedTasks(queryParams)!.map((task) => (
-          <Row key={task.id}>
-            <div className="w-1/4 overflow-hidden font-normal">
-              {task.lastExecuted
-                ? `Ran ${dayjs(task.lastExecuted).fromNow()}`
-                : `Starts ${dayjs(task.executeAt).fromNow()}`}
-            </div>
-            <div className="w-1/3">{task.name}</div>
-            <div className="w-1/6">{task.status}</div>
-            <div className="w-1/4">
-              <Progress
-                bars={[{ label: "Completed", color: "green", pc: 10 }]}
-                size="sm"
-              />
-            </div>
-          </Row>
+        {tasks.map((task) => (
+          <Link
+            key={task.id}
+            to={`/tasks/${String(task.id)}/meta`}
+            className="block"
+          >
+            <Row>
+              <div className="w-1/4 overflow-hidden font-normal">
+                {task.lastExecuted
+                  ? `Ran ${dayjs(task.lastExecuted).fromNow()}`
+                  : `Starts ${dayjs(task.executeAt).fromNow()}`}
+              </div>
+              <div className="w-1/3">{task.name}</div>
+              <div className="w-1/6">{task.status}</div>
+              <div className="w-1/4">
+                <Progress
+                  bars={[{ label: "Completed", color: "green", pc: 10 }]}
+                  size="sm"
+                />
+              </div>
+            </Row>
+          </Link>
         ))}
       </div>
-      <div className="flex justify-end mt-6">
-        {false && <Button size="sm">← Newer</Button>}
-        <Button size="sm">Older →</Button>
-      </div>
+      {tasks.length > 15 && (
+        <div className="flex justify-end mt-6">
+          {false && <Button size="sm">← Newer</Button>}
+          <Button size="sm">Older →</Button>
+        </div>
+      )}
     </>
   );
 });

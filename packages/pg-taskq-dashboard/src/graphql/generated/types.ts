@@ -197,7 +197,7 @@ type t_Query = FieldsType<
     /**
      * Reads and enables pagination through a set of `Task`.
      */
-    descendantTasksConnectio: FieldsTypeArg<
+    descendantTasksConnection: FieldsTypeArg<
       {
         taskId?: number | null;
         first?: number | null;
@@ -205,6 +205,7 @@ type t_Query = FieldsType<
         offset?: number | null;
         before?: any | null;
         after?: any | null;
+        orderBy?: TasksOrderBy[] | null;
       },
       t_TasksConnection
     >;
@@ -213,8 +214,13 @@ type t_Query = FieldsType<
      * Reads and enables pagination through a set of `Task`.
      */
     descendantTasks: FieldsTypeArg<
-      { taskId?: number | null; first?: number | null; offset?: number | null },
-      (t_Task | null)[] | null
+      {
+        taskId?: number | null;
+        first?: number | null;
+        offset?: number | null;
+        orderBy?: TasksOrderBy[] | null;
+      },
+      t_Task[]
     >;
     descendantTasksCounts: FieldsTypeArg<
       { taskId?: number | null },
@@ -463,9 +469,9 @@ type t_Task = FieldsType<
     /**
      * Reads and enables pagination through a set of `Task`.
      */
-    children?: FieldsTypeArg<
+    children: FieldsTypeArg<
       { first?: number | null; offset?: number | null },
-      (t_Task | null)[] | null
+      (t_Task | null)[]
     >;
     descendantCounts?: t_Count | null;
 
@@ -486,9 +492,9 @@ type t_Task = FieldsType<
     /**
      * Reads and enables pagination through a set of `Task`.
      */
-    descendants?: FieldsTypeArg<
+    descendants: FieldsTypeArg<
       { first?: number | null; offset?: number | null },
-      (t_Task | null)[] | null
+      (t_Task | null)[]
     >;
     lastExecuted?: t_Datetime | null;
     status?: t_String | null;
@@ -989,6 +995,8 @@ type t_TasksOrderBy = EnumType<
   | "EXECUTE_AT_DESC"
   | "LOCKED_ASC"
   | "LOCKED_DESC"
+  | "LAST_EXECUTED_ASC"
+  | "LAST_EXECUTED_DESC"
   | "PRIMARY_KEY_ASC"
   | "PRIMARY_KEY_DESC"
 >;
@@ -1018,7 +1026,7 @@ type t_Mutation = FieldsType<
     /**
      * Creates a single `Execution`.
      */
-    createExecution?: FieldsTypeArg<
+    createExecution: FieldsTypeArg<
       { input: CreateExecutionInput },
       t_CreateExecutionPayload | null
     >;
@@ -1026,7 +1034,7 @@ type t_Mutation = FieldsType<
     /**
      * Creates a single `ExtendedTask`.
      */
-    createExtendedTask?: FieldsTypeArg<
+    createExtendedTask: FieldsTypeArg<
       { input: CreateExtendedTaskInput },
       t_CreateExtendedTaskPayload | null
     >;
@@ -1034,7 +1042,7 @@ type t_Mutation = FieldsType<
     /**
      * Creates a single `Log`.
      */
-    createLog?: FieldsTypeArg<
+    createLog: FieldsTypeArg<
       { input: CreateLogInput },
       t_CreateLogPayload | null
     >;
@@ -1042,7 +1050,7 @@ type t_Mutation = FieldsType<
     /**
      * Creates a single `Migration`.
      */
-    createMigration?: FieldsTypeArg<
+    createMigration: FieldsTypeArg<
       { input: CreateMigrationInput },
       t_CreateMigrationPayload | null
     >;
@@ -1050,7 +1058,7 @@ type t_Mutation = FieldsType<
     /**
      * Creates a single `Task`.
      */
-    createTask?: FieldsTypeArg<
+    createTask: FieldsTypeArg<
       { input: CreateTaskInput },
       t_CreateTaskPayload | null
     >;
@@ -1058,7 +1066,7 @@ type t_Mutation = FieldsType<
     /**
      * Updates a single `Execution` using its globally unique id and a patch.
      */
-    updateExecutionByNodeId?: FieldsTypeArg<
+    updateExecutionByNodeId: FieldsTypeArg<
       { input: UpdateExecutionByNodeIdInput },
       t_UpdateExecutionPayload | null
     >;
@@ -1066,7 +1074,7 @@ type t_Mutation = FieldsType<
     /**
      * Updates a single `Execution` using a unique key and a patch.
      */
-    updateExecution?: FieldsTypeArg<
+    updateExecution: FieldsTypeArg<
       { input: UpdateExecutionInput },
       t_UpdateExecutionPayload | null
     >;
@@ -1074,7 +1082,7 @@ type t_Mutation = FieldsType<
     /**
      * Updates a single `Log` using its globally unique id and a patch.
      */
-    updateLogByNodeId?: FieldsTypeArg<
+    updateLogByNodeId: FieldsTypeArg<
       { input: UpdateLogByNodeIdInput },
       t_UpdateLogPayload | null
     >;
@@ -1082,7 +1090,7 @@ type t_Mutation = FieldsType<
     /**
      * Updates a single `Log` using a unique key and a patch.
      */
-    updateLog?: FieldsTypeArg<
+    updateLog: FieldsTypeArg<
       { input: UpdateLogInput },
       t_UpdateLogPayload | null
     >;
@@ -1090,7 +1098,7 @@ type t_Mutation = FieldsType<
     /**
      * Updates a single `Migration` using its globally unique id and a patch.
      */
-    updateMigrationByNodeId?: FieldsTypeArg<
+    updateMigrationByNodeId: FieldsTypeArg<
       { input: UpdateMigrationByNodeIdInput },
       t_UpdateMigrationPayload | null
     >;
@@ -1098,7 +1106,7 @@ type t_Mutation = FieldsType<
     /**
      * Updates a single `Migration` using a unique key and a patch.
      */
-    updateMigration?: FieldsTypeArg<
+    updateMigration: FieldsTypeArg<
       { input: UpdateMigrationInput },
       t_UpdateMigrationPayload | null
     >;
@@ -1106,7 +1114,7 @@ type t_Mutation = FieldsType<
     /**
      * Updates a single `Migration` using a unique key and a patch.
      */
-    updateMigrationByName?: FieldsTypeArg<
+    updateMigrationByName: FieldsTypeArg<
       { input: UpdateMigrationByNameInput },
       t_UpdateMigrationPayload | null
     >;
@@ -1114,7 +1122,7 @@ type t_Mutation = FieldsType<
     /**
      * Updates a single `Task` using its globally unique id and a patch.
      */
-    updateTaskByNodeId?: FieldsTypeArg<
+    updateTaskByNodeId: FieldsTypeArg<
       { input: UpdateTaskByNodeIdInput },
       t_UpdateTaskPayload | null
     >;
@@ -1122,7 +1130,7 @@ type t_Mutation = FieldsType<
     /**
      * Updates a single `Task` using a unique key and a patch.
      */
-    updateTask?: FieldsTypeArg<
+    updateTask: FieldsTypeArg<
       { input: UpdateTaskInput },
       t_UpdateTaskPayload | null
     >;
@@ -1130,7 +1138,7 @@ type t_Mutation = FieldsType<
     /**
      * Updates a single `Task` using a unique key and a patch.
      */
-    updateTaskByNameAndParamsAndContextAndExecuteAt?: FieldsTypeArg<
+    updateTaskByNameAndParamsAndContextAndExecuteAt: FieldsTypeArg<
       { input: UpdateTaskByNameAndParamsAndContextAndExecuteAtInput },
       t_UpdateTaskPayload | null
     >;
@@ -1138,7 +1146,7 @@ type t_Mutation = FieldsType<
     /**
      * Deletes a single `Execution` using its globally unique id.
      */
-    deleteExecutionByNodeId?: FieldsTypeArg<
+    deleteExecutionByNodeId: FieldsTypeArg<
       { input: DeleteExecutionByNodeIdInput },
       t_DeleteExecutionPayload | null
     >;
@@ -1146,7 +1154,7 @@ type t_Mutation = FieldsType<
     /**
      * Deletes a single `Execution` using a unique key.
      */
-    deleteExecution?: FieldsTypeArg<
+    deleteExecution: FieldsTypeArg<
       { input: DeleteExecutionInput },
       t_DeleteExecutionPayload | null
     >;
@@ -1154,7 +1162,7 @@ type t_Mutation = FieldsType<
     /**
      * Deletes a single `Log` using its globally unique id.
      */
-    deleteLogByNodeId?: FieldsTypeArg<
+    deleteLogByNodeId: FieldsTypeArg<
       { input: DeleteLogByNodeIdInput },
       t_DeleteLogPayload | null
     >;
@@ -1162,7 +1170,7 @@ type t_Mutation = FieldsType<
     /**
      * Deletes a single `Log` using a unique key.
      */
-    deleteLog?: FieldsTypeArg<
+    deleteLog: FieldsTypeArg<
       { input: DeleteLogInput },
       t_DeleteLogPayload | null
     >;
@@ -1170,7 +1178,7 @@ type t_Mutation = FieldsType<
     /**
      * Deletes a single `Migration` using its globally unique id.
      */
-    deleteMigrationByNodeId?: FieldsTypeArg<
+    deleteMigrationByNodeId: FieldsTypeArg<
       { input: DeleteMigrationByNodeIdInput },
       t_DeleteMigrationPayload | null
     >;
@@ -1178,7 +1186,7 @@ type t_Mutation = FieldsType<
     /**
      * Deletes a single `Migration` using a unique key.
      */
-    deleteMigration?: FieldsTypeArg<
+    deleteMigration: FieldsTypeArg<
       { input: DeleteMigrationInput },
       t_DeleteMigrationPayload | null
     >;
@@ -1186,7 +1194,7 @@ type t_Mutation = FieldsType<
     /**
      * Deletes a single `Migration` using a unique key.
      */
-    deleteMigrationByName?: FieldsTypeArg<
+    deleteMigrationByName: FieldsTypeArg<
       { input: DeleteMigrationByNameInput },
       t_DeleteMigrationPayload | null
     >;
@@ -1194,7 +1202,7 @@ type t_Mutation = FieldsType<
     /**
      * Deletes a single `Task` using its globally unique id.
      */
-    deleteTaskByNodeId?: FieldsTypeArg<
+    deleteTaskByNodeId: FieldsTypeArg<
       { input: DeleteTaskByNodeIdInput },
       t_DeleteTaskPayload | null
     >;
@@ -1202,7 +1210,7 @@ type t_Mutation = FieldsType<
     /**
      * Deletes a single `Task` using a unique key.
      */
-    deleteTask?: FieldsTypeArg<
+    deleteTask: FieldsTypeArg<
       { input: DeleteTaskInput },
       t_DeleteTaskPayload | null
     >;
@@ -1210,7 +1218,7 @@ type t_Mutation = FieldsType<
     /**
      * Deletes a single `Task` using a unique key.
      */
-    deleteTaskByNameAndParamsAndContextAndExecuteAt?: FieldsTypeArg<
+    deleteTaskByNameAndParamsAndContextAndExecuteAt: FieldsTypeArg<
       { input: DeleteTaskByNameAndParamsAndContextAndExecuteAtInput },
       t_DeleteTaskPayload | null
     >;
@@ -1269,7 +1277,7 @@ type t_CreateExecutionPayload = FieldsType<
     /**
      * An edge for our `Execution`. May be used by Relay 1.
      */
-    executionEdge?: FieldsTypeArg<
+    executionEdge: FieldsTypeArg<
       { orderBy?: ExecutionsOrderBy[] | null },
       t_ExecutionsEdge | null
     >;
@@ -1329,7 +1337,7 @@ type t_CreateExtendedTaskPayload = FieldsType<
     /**
      * An edge for our `ExtendedTask`. May be used by Relay 1.
      */
-    extendedTaskEdge?: FieldsTypeArg<
+    extendedTaskEdge: FieldsTypeArg<
       { orderBy?: ExtendedTasksOrderBy[] | null },
       t_ExtendedTasksEdge | null
     >;
@@ -1388,7 +1396,7 @@ type t_CreateLogPayload = FieldsType<
     /**
      * An edge for our `Log`. May be used by Relay 1.
      */
-    logEdge?: FieldsTypeArg<
+    logEdge: FieldsTypeArg<
       { orderBy?: LogsOrderBy[] | null },
       t_LogsEdge | null
     >;
@@ -1442,7 +1450,7 @@ type t_CreateMigrationPayload = FieldsType<
     /**
      * An edge for our `Migration`. May be used by Relay 1.
      */
-    migrationEdge?: FieldsTypeArg<
+    migrationEdge: FieldsTypeArg<
       { orderBy?: MigrationsOrderBy[] | null },
       t_MigrationsEdge | null
     >;
@@ -1499,7 +1507,7 @@ type t_CreateTaskPayload = FieldsType<
     /**
      * An edge for our `Task`. May be used by Relay 1.
      */
-    taskEdge?: FieldsTypeArg<
+    taskEdge: FieldsTypeArg<
       { orderBy?: TasksOrderBy[] | null },
       t_TasksEdge | null
     >;
@@ -1559,7 +1567,7 @@ type t_UpdateExecutionPayload = FieldsType<
     /**
      * An edge for our `Execution`. May be used by Relay 1.
      */
-    executionEdge?: FieldsTypeArg<
+    executionEdge: FieldsTypeArg<
       { orderBy?: ExecutionsOrderBy[] | null },
       t_ExecutionsEdge | null
     >;
@@ -1629,7 +1637,7 @@ type t_UpdateLogPayload = FieldsType<
     /**
      * An edge for our `Log`. May be used by Relay 1.
      */
-    logEdge?: FieldsTypeArg<
+    logEdge: FieldsTypeArg<
       { orderBy?: LogsOrderBy[] | null },
       t_LogsEdge | null
     >;
@@ -1694,7 +1702,7 @@ type t_UpdateMigrationPayload = FieldsType<
     /**
      * An edge for our `Migration`. May be used by Relay 1.
      */
-    migrationEdge?: FieldsTypeArg<
+    migrationEdge: FieldsTypeArg<
       { orderBy?: MigrationsOrderBy[] | null },
       t_MigrationsEdge | null
     >;
@@ -1772,7 +1780,7 @@ type t_UpdateTaskPayload = FieldsType<
     /**
      * An edge for our `Task`. May be used by Relay 1.
      */
-    taskEdge?: FieldsTypeArg<
+    taskEdge: FieldsTypeArg<
       { orderBy?: TasksOrderBy[] | null },
       t_TasksEdge | null
     >;
@@ -1844,7 +1852,7 @@ type t_DeleteExecutionPayload = FieldsType<
     /**
      * An edge for our `Execution`. May be used by Relay 1.
      */
-    executionEdge?: FieldsTypeArg<
+    executionEdge: FieldsTypeArg<
       { orderBy?: ExecutionsOrderBy[] | null },
       t_ExecutionsEdge | null
     >;
@@ -1902,7 +1910,7 @@ type t_DeleteLogPayload = FieldsType<
     /**
      * An edge for our `Log`. May be used by Relay 1.
      */
-    logEdge?: FieldsTypeArg<
+    logEdge: FieldsTypeArg<
       { orderBy?: LogsOrderBy[] | null },
       t_LogsEdge | null
     >;
@@ -1952,7 +1960,7 @@ type t_DeleteMigrationPayload = FieldsType<
     /**
      * An edge for our `Migration`. May be used by Relay 1.
      */
-    migrationEdge?: FieldsTypeArg<
+    migrationEdge: FieldsTypeArg<
       { orderBy?: MigrationsOrderBy[] | null },
       t_MigrationsEdge | null
     >;
@@ -2014,7 +2022,7 @@ type t_DeleteTaskPayload = FieldsType<
     /**
      * An edge for our `Task`. May be used by Relay 1.
      */
-    taskEdge?: FieldsTypeArg<
+    taskEdge: FieldsTypeArg<
       { orderBy?: TasksOrderBy[] | null },
       t_TasksEdge | null
     >;
@@ -2086,13 +2094,13 @@ type t___Type = FieldsType<
     kind: t___TypeKind;
     name?: t_String | null;
     description?: t_String | null;
-    fields?: FieldsTypeArg<
+    fields: FieldsTypeArg<
       { includeDeprecated?: boolean | null },
       t___Field[] | null
     >;
     interfaces?: t___Type[] | null;
     possibleTypes?: t___Type[] | null;
-    enumValues?: FieldsTypeArg<
+    enumValues: FieldsTypeArg<
       { includeDeprecated?: boolean | null },
       t___EnumValue[] | null
     >;
@@ -2478,6 +2486,8 @@ export enum TasksOrderBy {
   EXECUTE_AT_DESC = "EXECUTE_AT_DESC",
   LOCKED_ASC = "LOCKED_ASC",
   LOCKED_DESC = "LOCKED_DESC",
+  LAST_EXECUTED_ASC = "LAST_EXECUTED_ASC",
+  LAST_EXECUTED_DESC = "LAST_EXECUTED_DESC",
   PRIMARY_KEY_ASC = "PRIMARY_KEY_ASC",
   PRIMARY_KEY_DESC = "PRIMARY_KEY_DESC"
 }

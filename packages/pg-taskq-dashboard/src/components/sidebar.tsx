@@ -21,7 +21,7 @@ export const Sidebar = graphql(() => {
       </h3>
       <Tabs direction="vertical">
         {Object.entries(counts).map(([key, { label, color }], i) => (
-          <Tab to={`/tasks/${key}`} default={i === 0}>
+          <Tab key={key} to={`/tasks/${key}`} default={i === 0}>
             <div className="flex justify-between">
               <div>{label}</div>
               <Suspense fallback="">

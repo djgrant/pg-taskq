@@ -427,6 +427,12 @@ export const schema = {
               },
               get after() {
                 return new ArgumentsField(schema.Cursor, true);
+              },
+              get orderBy() {
+                return new ArgumentsField(
+                  new ArrayNode(schema.TasksOrderBy, true),
+                  true
+                );
               }
             }),
             false
@@ -434,7 +440,7 @@ export const schema = {
         },
         get descendantTasks() {
           return new FieldNode(
-            new ArrayNode(schema.Task, true),
+            new ArrayNode(schema.Task, false),
             new Arguments({
               get taskId() {
                 return new ArgumentsField(schema.Int, true);
@@ -444,9 +450,15 @@ export const schema = {
               },
               get offset() {
                 return new ArgumentsField(schema.Int, true);
+              },
+              get orderBy() {
+                return new ArgumentsField(
+                  new ArrayNode(schema.TasksOrderBy, true),
+                  true
+                );
               }
             }),
-            true
+            false
           );
         },
         get descendantTasksCounts() {
@@ -809,7 +821,7 @@ export const schema = {
         },
         get children() {
           return new FieldNode(
-            new ArrayNode(schema.Task, true),
+            new ArrayNode(schema.Task, false),
             new Arguments({
               get first() {
                 return new ArgumentsField(schema.Int, true);
@@ -818,7 +830,7 @@ export const schema = {
                 return new ArgumentsField(schema.Int, true);
               }
             }),
-            true
+            false
           );
         },
         get descendantCounts() {
@@ -849,7 +861,7 @@ export const schema = {
         },
         get descendants() {
           return new FieldNode(
-            new ArrayNode(schema.Task, true),
+            new ArrayNode(schema.Task, false),
             new Arguments({
               get first() {
                 return new ArgumentsField(schema.Int, true);
@@ -858,7 +870,7 @@ export const schema = {
                 return new ArgumentsField(schema.Int, true);
               }
             }),
-            true
+            false
           );
         },
         get lastExecuted() {

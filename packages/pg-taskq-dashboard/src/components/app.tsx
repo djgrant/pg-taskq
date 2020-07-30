@@ -32,6 +32,7 @@ export const App = () => (
         </div>
         <Suspense fallback={<span className="text-gray-600">Loading...</span>}>
           <Router>
+            <Tasks path="tasks/:taskId" />
             <Tasks path="tasks" default />
           </Router>
         </Suspense>
