@@ -41,6 +41,7 @@ export const App = () => (
               <Tasks path="tasks/:taskId/tasks/:status" />
               <Info path="tasks/:taskId/info" />
               <Logs path="tasks/:taskId/logs" />
+              <Redirect from="/" to="/tasks/root/tasks" noThrow />
               <Redirect from="/tasks" to="/tasks/root/tasks" noThrow />
             </Router>
           </Suspense>
