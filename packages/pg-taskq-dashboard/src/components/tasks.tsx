@@ -61,30 +61,33 @@ export const TaskRows = graphql(({ taskId }: { taskId: number | null }) => {
   return (
     <>
       <div className="space-y-3">
-        {tasks.map((task) => (
-          <Link
-            key={task.id}
-            to={`/tasks/${String(task.id)}/meta`}
-            className="block"
-            onClick={() => (query.task({ id: task.id })!.name = task.name)}
-          >
-            <Row>
-              <div className="w-1/4 overflow-hidden font-normal">
-                {task.lastExecuted
-                  ? `Ran ${dayjs(task.lastExecuted).fromNow()}`
-                  : `Starts ${dayjs(task.executeAt).fromNow()}`}
-              </div>
-              <div className="w-1/3">{task.name}</div>
-              <div className="w-1/6">{task.status}</div>
-              <div className="w-1/4">
-                <Progress
-                  bars={[{ label: "Completed", color: "green", pc: 10 }]}
-                  size="sm"
-                />
-              </div>
-            </Row>
-          </Link>
-        ))}
+        {tasks.map(
+          (task) =>
+            task.id && (
+              <Link
+                key={task.id}
+                to={`/tasks/${String(task.id)}`}
+                className="block"
+                onClick={() => (query.task({ id: task.id })!.name = task.name)}
+              >
+                <Row>
+                  <div className="w-1/4 overflow-hidden font-normal">
+                    {task.lastExecuted
+                      ? `Ran ${dayjs(task.lastExecuted).fromNow()}`
+                      : `Starts ${dayjs(task.executeAt).fromNow()}`}
+                  </div>
+                  <div className="w-1/3">{task.name}</div>
+                  <div className="w-1/6">{task.status}</div>
+                  <div className="w-1/4">
+                    <Progress
+                      bars={[{ label: "Completed", color: "green", pc: 10 }]}
+                      size="sm"
+                    />
+                  </div>
+                </Row>
+              </Link>
+            )
+        )}
       </div>
       {tasks.length > 15 && (
         <div className="flex justify-end mt-6">
