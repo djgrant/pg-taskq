@@ -408,7 +408,7 @@ export const schema = {
         },
         get descendantTasksConnection() {
           return new FieldNode(
-            schema.ExtendedTasksConnection,
+            schema.TasksConnection,
             new Arguments({
               get taskId() {
                 return new ArgumentsField(schema.Int, true);
@@ -430,12 +430,12 @@ export const schema = {
               },
               get orderBy() {
                 return new ArgumentsField(
-                  new ArrayNode(schema.ExtendedTasksOrderBy, true),
+                  new ArrayNode(schema.TasksOrderBy, true),
                   true
                 );
               },
               get condition() {
-                return new ArgumentsField(schema.ExtendedTaskCondition, true);
+                return new ArgumentsField(schema.TaskCondition, true);
               }
             }),
             false
@@ -443,7 +443,7 @@ export const schema = {
         },
         get descendantTasks() {
           return new FieldNode(
-            new ArrayNode(schema.ExtendedTask, false),
+            new ArrayNode(schema.Task, false),
             new Arguments({
               get taskId() {
                 return new ArgumentsField(schema.Int, true);
@@ -456,12 +456,12 @@ export const schema = {
               },
               get orderBy() {
                 return new ArgumentsField(
-                  new ArrayNode(schema.ExtendedTasksOrderBy, true),
+                  new ArrayNode(schema.TasksOrderBy, true),
                   true
                 );
               },
               get condition() {
-                return new ArgumentsField(schema.ExtendedTaskCondition, true);
+                return new ArgumentsField(schema.TaskCondition, true);
               }
             }),
             false

@@ -107,7 +107,7 @@ $$ LANGUAGE SQL STABLE;
 
 CREATE FUNCTION descendant_tasks(task_id int) RETURNS setof extended_tasks AS $$
 	WITH RECURSIVE child_tasks AS (
-		SELECT * FROM extended_tasks
+		SELECT * FROM tasks
 			WHERE CASE WHEN $1 IS NULL 
 			THEN 
 				parent_id IS NULL 
@@ -115,7 +115,7 @@ CREATE FUNCTION descendant_tasks(task_id int) RETURNS setof extended_tasks AS $$
 				parent_id = $1 
 			END
 		UNION ALL
-		SELECT t.* FROM extended_tasks t, child_tasks c WHERE t.parent_id = c.id
+		SELECT t.* FROM tasks t, child_tasks c WHERE t.parent_id = c.id
 	) 
 	SELECT * FROM child_tasks;
 $$ 
@@ -124,7 +124,7 @@ COMMENT ON FUNCTION descendant_tasks IS E'@sortable\n@filterable';
 	
 CREATE FUNCTION descendant_tasks_counts(task_id int) RETURNS counts AS $$
 	WITH child_tasks AS (
-		SELECT * FROM descendant_tasks(task_id)
+		SELECT *, tasks_status(d) as status FROM descendant_tasks(task_id) d
 	)
 	SELECT
 		(SELECT count(*) FROM child_tasks c WHERE c.status = 'running'),

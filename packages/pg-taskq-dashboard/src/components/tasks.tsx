@@ -1,11 +1,13 @@
 import React from "react";
 import { RouteComponentProps, Link, useParams } from "@reach/router";
-import { Button, Progress } from "@djgrant/components";
+import { Button } from "@djgrant/components";
 import { tw } from "@djgrant/react-tailwind";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 import { graphql, usePoll } from "@gqless/react";
-import { query, ExtendedTasksOrderBy } from "../graphql";
+import { query, TasksOrderBy } from "../graphql";
+import { DescendantTaskProgress } from "./progress";
+import { counts } from "./sidebar";
 
 dayjs.extend(relativeTime);
 
@@ -33,7 +35,7 @@ export const Tasks: React.FC<TasksProps> = graphql((props) => {
   const queryParams = {
     taskId,
     first: 15,
-    orderBy: [ExtendedTasksOrderBy.LAST_EXECUTED_DESC],
+    orderBy: [TasksOrderBy.LAST_EXECUTED_DESC],
     condition: params.status === "total" ? null : { status: params.status },
   };
   const tasks = query.descendantTasks(queryParams);
@@ -63,12 +65,16 @@ export const Tasks: React.FC<TasksProps> = graphql((props) => {
                       : `Starts ${dayjs(task.executeAt).fromNow()}`}
                   </div>
                   <div className="w-1/3">{task.name}</div>
-                  <div className="w-1/6">{task.status}</div>
+                  <div
+                    className={`w-1/6 text-${
+                      task.status &&
+                      counts[task.status as keyof typeof counts].color
+                    }-500`}
+                  >
+                    {task.status && capitalize(task.status)}
+                  </div>
                   <div className="w-1/4">
-                    <Progress
-                      bars={[{ label: "Completed", color: "green", pc: 10 }]}
-                      size="sm"
-                    />
+                    <DescendantTaskProgress task={task} />
                   </div>
                 </Row>
               </Link>
@@ -86,3 +92,7 @@ export const Tasks: React.FC<TasksProps> = graphql((props) => {
     </>
   );
 });
+
+function capitalize(string: string) {
+  return string.charAt(0).toUpperCase() + string.slice(1);
+}

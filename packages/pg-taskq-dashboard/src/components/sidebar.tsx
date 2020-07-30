@@ -4,14 +4,14 @@ import { Badge, H6, Label, Input, Tabs, Tab } from "@djgrant/components";
 import { graphql, usePoll } from "@gqless/react";
 import { query } from "../graphql";
 
-const counts = {
-  total: { label: "All", color: "green" },
-  scheduled: { label: "Scheduled", color: "green" },
-  pending: { label: "Pending", color: "green" },
-  running: { label: "Running", color: "green" },
+export const counts = {
+  total: { label: "All", color: "blue" },
+  scheduled: { label: "Scheduled", color: "gray" },
+  pending: { label: "Pending", color: "yellow" },
+  running: { label: "Running", color: "indigo" },
   success: { label: "Successful", color: "green" },
-  failure: { label: "Failed", color: "green" },
-  timeout: { label: "Timed out", color: "green" },
+  failure: { label: "Failed", color: "red" },
+  timeout: { label: "Timed out", color: "orange" },
 };
 
 export const Sidebar = () => (

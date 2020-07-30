@@ -195,7 +195,7 @@ type t_Query = FieldsType<
     >;
 
     /**
-     * Reads and enables pagination through a set of `ExtendedTask`.
+     * Reads and enables pagination through a set of `Task`.
      */
     descendantTasksConnection: FieldsTypeArg<
       {
@@ -205,24 +205,24 @@ type t_Query = FieldsType<
         offset?: number | null;
         before?: any | null;
         after?: any | null;
-        orderBy?: ExtendedTasksOrderBy[] | null;
-        condition?: ExtendedTaskCondition | null;
+        orderBy?: TasksOrderBy[] | null;
+        condition?: TaskCondition | null;
       },
-      t_ExtendedTasksConnection
+      t_TasksConnection
     >;
 
     /**
-     * Reads and enables pagination through a set of `ExtendedTask`.
+     * Reads and enables pagination through a set of `Task`.
      */
     descendantTasks: FieldsTypeArg<
       {
         taskId?: number | null;
         first?: number | null;
         offset?: number | null;
-        orderBy?: ExtendedTasksOrderBy[] | null;
-        condition?: ExtendedTaskCondition | null;
+        orderBy?: TasksOrderBy[] | null;
+        condition?: TaskCondition | null;
       },
-      t_ExtendedTask[]
+      t_Task[]
     >;
     descendantTasksCounts: FieldsTypeArg<{ taskId?: number | null }, t_Count>;
 
