@@ -24,10 +24,12 @@ export const App = () => (
       </header>
 
       <div className="flex h-full">
-        <div className="w-64 py-6 pr-4 border-r-2 border-gray-200">
-          <Suspense fallback="">
-            <Sidebar />
-          </Suspense>
+        <div className="w-64 h-full border-r-2 border-gray-200">
+          <div className="sticky top-0 py-6 pr-4">
+            <Suspense fallback="">
+              <Sidebar />
+            </Suspense>
+          </div>
         </div>
 
         <main className="flex-grow px-6 py-2">
