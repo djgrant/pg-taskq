@@ -1,4 +1,5 @@
 import React, { Suspense } from "react";
+import { RouteComponentProps } from "@reach/router";
 import { Badge, H6, Label, Input, Tabs, Tab } from "@djgrant/components";
 import { graphql, usePoll } from "@gqless/react";
 import { query } from "../graphql";
@@ -13,20 +14,23 @@ const counts = {
   timeout: { label: "Timed out", color: "green" },
 };
 
-export const Sidebar = graphql(() => {
+type SidebarProps = RouteComponentProps<{ taskId?: string }>;
+
+export const Sidebar: React.FC<SidebarProps> = (props) => {
+  const taskId = props.taskId ? Number(props.taskId) || null : null;
   return (
     <div className="space-y-4">
       <h3 className="mx-6 mt-1 mb-6 text-xl font-medium text-gray-500 font-heading">
-        Root Tasks
+        <TaskName taskId={taskId} />
       </h3>
       <Tabs direction="vertical">
         {Object.entries(counts).map(([key, { label, color }], i) => (
-          <Tab key={key} to={`/tasks/${key}`} default={i === 0}>
+          <Tab key={key} to={`/tasks/${key}`}>
             <div className="flex justify-between">
               <div>{label}</div>
               <Suspense fallback="">
                 <Badge color={color}>
-                  <LiveCount field={key} />
+                  <LiveCount field={key} taskId={taskId} />
                 </Badge>
               </Suspense>
             </div>
@@ -48,9 +52,22 @@ export const Sidebar = graphql(() => {
       </div>
     </div>
   );
+};
+
+interface LiveCountProps {
+  field: string;
+  taskId: number | null;
+}
+
+const LiveCount = graphql(({ field, taskId }: LiveCountProps) => {
+  const count = query.descendantTasksCounts({ taskId })[
+    field as keyof typeof counts
+  ];
+  usePoll(count, 5000);
+  return count;
 });
 
-const LiveCount = graphql(({ field }: { field: string }) => {
-  usePoll(query.descendantTasksCounts, 5000);
-  return query.descendantTasksCounts[field as keyof typeof counts];
+const TaskName = graphql(({ taskId }: { taskId: number | null }) => {
+  if (!taskId) return "Root tasks";
+  return query.task({ id: taskId })?.name;
 });

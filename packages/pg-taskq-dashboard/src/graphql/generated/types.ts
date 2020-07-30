@@ -195,7 +195,7 @@ type t_Query = FieldsType<
     >;
 
     /**
-     * Reads and enables pagination through a set of `Task`.
+     * Reads and enables pagination through a set of `ExtendedTask`.
      */
     descendantTasksConnection: FieldsTypeArg<
       {
@@ -205,27 +205,24 @@ type t_Query = FieldsType<
         offset?: number | null;
         before?: any | null;
         after?: any | null;
-        orderBy?: TasksOrderBy[] | null;
+        orderBy?: ExtendedTasksOrderBy[] | null;
       },
-      t_TasksConnection
+      t_ExtendedTasksConnection
     >;
 
     /**
-     * Reads and enables pagination through a set of `Task`.
+     * Reads and enables pagination through a set of `ExtendedTask`.
      */
     descendantTasks: FieldsTypeArg<
       {
         taskId?: number | null;
         first?: number | null;
         offset?: number | null;
-        orderBy?: TasksOrderBy[] | null;
+        orderBy?: ExtendedTasksOrderBy[] | null;
       },
-      t_Task[]
+      t_ExtendedTask[]
     >;
-    descendantTasksCounts: FieldsTypeArg<
-      { taskId?: number | null },
-      t_Count | null
-    >;
+    descendantTasksCounts: FieldsTypeArg<{ taskId?: number | null }, t_Count>;
 
     /**
      * Reads a single `Execution` using its globally unique `ID`.

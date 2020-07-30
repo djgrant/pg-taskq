@@ -5,7 +5,7 @@ import { tw } from "@djgrant/react-tailwind";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 import { graphql, usePoll } from "@gqless/react";
-import { query, TasksOrderBy } from "../graphql";
+import { query, ExtendedTasksOrderBy } from "../graphql";
 
 dayjs.extend(relativeTime);
 
@@ -54,7 +54,7 @@ export const TaskRows = graphql(({ taskId }: { taskId: number | null }) => {
   const queryParams = {
     taskId,
     first: 15,
-    orderBy: [TasksOrderBy.LAST_EXECUTED_DESC],
+    orderBy: [ExtendedTasksOrderBy.LAST_EXECUTED_DESC],
   };
   const tasks = query.descendantTasks(queryParams);
   usePoll(tasks, 5000);
@@ -66,6 +66,7 @@ export const TaskRows = graphql(({ taskId }: { taskId: number | null }) => {
             key={task.id}
             to={`/tasks/${String(task.id)}/meta`}
             className="block"
+            onClick={() => (query.task({ id: task.id })!.name = task.name)}
           >
             <Row>
               <div className="w-1/4 overflow-hidden font-normal">

@@ -81,6 +81,8 @@ CREATE FUNCTION tasks_last_executed(t tasks) RETURNS TIMESTAMP WITH TIME ZONE AS
 $$ 
 LANGUAGE SQL STABLE;
 
+COMMENT ON FUNCTION tasks_last_executed IS '@sortable';
+
 CREATE FUNCTION tasks_attempts(t tasks) RETURNS INTEGER AS $$
     SELECT count(*)::integer
     FROM executions e
@@ -93,9 +95,9 @@ CREATE FUNCTION tasks_children(t tasks) RETURNS SETOF tasks AS $$
 $$ 
 LANGUAGE SQL STABLE;
 
-CREATE FUNCTION descendant_tasks(task_id int) RETURNS setof tasks AS $$
+CREATE FUNCTION descendant_tasks(task_id int) RETURNS setof extended_tasks AS $$
 	WITH RECURSIVE child_tasks AS (
-		SELECT * FROM tasks
+		SELECT * FROM extended_tasks
 			WHERE CASE WHEN $1 IS NULL 
 			THEN 
 				parent_id IS NULL 
@@ -103,23 +105,25 @@ CREATE FUNCTION descendant_tasks(task_id int) RETURNS setof tasks AS $$
 				parent_id = $1 
 			END
 		UNION ALL
-		SELECT t.* FROM tasks t, child_tasks c WHERE t.parent_id = c.id
+		SELECT t.* FROM extended_tasks t, child_tasks c WHERE t.parent_id = c.id
 	) 
 	SELECT * FROM child_tasks;
 $$ 
 LANGUAGE SQL STABLE;
+
+COMMENT ON FUNCTION descendant_tasks IS '@sortable';
 	
 CREATE FUNCTION descendant_tasks_counts(task_id int) RETURNS counts AS $$
 	WITH child_tasks AS (
-		SELECT * FROM descendant_tasks(task_id) t INNER JOIN executions e ON t.id = e.task_id
+		SELECT * FROM descendant_tasks(task_id)
 	)
 	SELECT
-		(SELECT count(*) FROM child_tasks WHERE status = 'running'),
-		(SELECT count(*) FROM child_tasks WHERE status = 'success'),
-		(SELECT count(*) FROM child_tasks WHERE status = 'failure'),
-		(SELECT count(*) FROM child_tasks WHERE status = 'pending'),
-		(SELECT count(*) FROM child_tasks WHERE status = 'timeout'),
-		(SELECT count(*) FROM child_tasks WHERE status = 'scheduled'),
+		(SELECT count(*) FROM child_tasks c WHERE c.status = 'running'),
+		(SELECT count(*) FROM child_tasks c WHERE c.status = 'success'),
+		(SELECT count(*) FROM child_tasks c WHERE c.status = 'failure'),
+		(SELECT count(*) FROM child_tasks c WHERE c.status = 'pending'),
+		(SELECT count(*) FROM child_tasks c WHERE c.status = 'timeout'),
+		(SELECT count(*) FROM child_tasks c WHERE c.status = 'scheduled'),
 		(SELECT count(*) FROM child_tasks);
 $$ 
 LANGUAGE SQL STABLE;
