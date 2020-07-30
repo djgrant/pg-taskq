@@ -1,10 +1,11 @@
 import React from "react";
 import { RouteComponentProps, Link, useParams } from "@reach/router";
-import { Button } from "@djgrant/components";
-import { tw } from "@djgrant/react-tailwind";
+import { graphql, usePoll } from "@gqless/react";
+import { observer } from "mobx-react";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
-import { graphql, usePoll } from "@gqless/react";
+import { Button } from "@djgrant/components";
+import { tw } from "@djgrant/react-tailwind";
 import { query, TasksOrderBy } from "../graphql";
 import { DescendantTaskProgress } from "./progress";
 import { counts } from "./sidebar";
@@ -29,69 +30,76 @@ const Row = tw.div(
 
 type TasksProps = RouteComponentProps<{ taskId?: string }>;
 
-export const Tasks: React.FC<TasksProps> = graphql((props) => {
-  const taskId = props.taskId ? Number(props.taskId) || null : null;
-  const params = useParams();
-  const queryParams = {
-    taskId,
-    first: 15,
-    orderBy: [TasksOrderBy.LAST_EXECUTED_DESC],
-    condition: params.status === "total" ? null : { status: params.status },
-  };
-  const tasks = query.descendantTasks(queryParams);
+export const Tasks: React.FC<TasksProps> = observer(
+  graphql((props) => {
+    const taskId = props.taskId ? Number(props.taskId) || null : null;
+    const params = useParams();
+    const queryParams = {
+      taskId,
+      first: 15,
+      orderBy: [TasksOrderBy.LAST_EXECUTED_DESC],
+      condition: params.status === "total" ? null : { status: params.status },
+    };
+    const { descendants } = query.local.searchForm;
+    const tasksQuery =
+      descendants === "all" ? "descendantTasks" : "childrenTasks";
+    const tasks = query[tasksQuery](queryParams);
 
-  usePoll(tasks, 5000);
+    usePoll(tasks, 5000);
 
-  if (!tasks[0]?.id) {
-    return <div className="text-gray-700">No tasks</div>;
-  }
+    if (!tasks[0]?.id) {
+      return <div className="text-gray-700">No tasks</div>;
+    }
 
-  return (
-    <>
-      <div className="space-y-3">
-        {tasks.map(
-          (task) =>
-            task?.id && (
-              <Link
-                key={task.id}
-                to={`/tasks/${String(task.id)}`}
-                className="block"
-                onClick={() => (query.task({ id: task.id })!.name = task.name)}
-              >
-                <Row>
-                  <div className="w-1/4 overflow-hidden font-normal">
-                    {task.lastExecuted
-                      ? `Ran ${dayjs(task.lastExecuted).fromNow()}`
-                      : `Starts ${dayjs(task.executeAt).fromNow()}`}
-                  </div>
-                  <div className="w-1/3">{task.name}</div>
-                  <div
-                    className={`w-1/6 text-${
-                      task.status &&
-                      counts[task.status as keyof typeof counts].color
-                    }-500`}
-                  >
-                    {task.status && capitalize(task.status)}
-                  </div>
-                  <div className="w-1/4">
-                    <DescendantTaskProgress task={task} />
-                  </div>
-                </Row>
-              </Link>
-            )
-        )}
-      </div>
-      {tasks.length > 14 && (
-        <div className="flex justify-end mt-6">
-          {false && <Button size="sm">← Newer</Button>}
-          <Button size="sm" disabled>
-            Older →
-          </Button>
+    return (
+      <>
+        <div className="space-y-3">
+          {tasks.map(
+            (task) =>
+              task?.id && (
+                <Link
+                  key={task.id}
+                  to={`/tasks/${String(task.id)}`}
+                  className="block"
+                  onClick={() =>
+                    (query.task({ id: task.id })!.name = task.name)
+                  }
+                >
+                  <Row>
+                    <div className="w-1/4 overflow-hidden font-normal">
+                      {task.lastExecuted
+                        ? `Ran ${dayjs(task.lastExecuted).fromNow()}`
+                        : `Starts ${dayjs(task.executeAt).fromNow()}`}
+                    </div>
+                    <div className="w-1/3">{task.name}</div>
+                    <div
+                      className={`w-1/6 text-${
+                        task.status &&
+                        counts[task.status as keyof typeof counts].color
+                      }-500`}
+                    >
+                      {task.status && capitalize(task.status)}
+                    </div>
+                    <div className="w-1/4">
+                      <DescendantTaskProgress task={task} />
+                    </div>
+                  </Row>
+                </Link>
+              )
+          )}
         </div>
-      )}
-    </>
-  );
-});
+        {tasks.length > 14 && (
+          <div className="flex justify-end mt-6">
+            {false && <Button size="sm">← Newer</Button>}
+            <Button size="sm" disabled>
+              Older →
+            </Button>
+          </div>
+        )}
+      </>
+    );
+  })
+);
 
 function capitalize(string: string) {
   return string.charAt(0).toUpperCase() + string.slice(1);

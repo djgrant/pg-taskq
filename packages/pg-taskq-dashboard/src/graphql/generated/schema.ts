@@ -406,6 +406,78 @@ export const schema = {
             true
           );
         },
+        get childrenTasksConnection() {
+          return new FieldNode(
+            schema.TasksConnection,
+            new Arguments({
+              get taskId() {
+                return new ArgumentsField(schema.Int, true);
+              },
+              get first() {
+                return new ArgumentsField(schema.Int, true);
+              },
+              get last() {
+                return new ArgumentsField(schema.Int, true);
+              },
+              get offset() {
+                return new ArgumentsField(schema.Int, true);
+              },
+              get before() {
+                return new ArgumentsField(schema.Cursor, true);
+              },
+              get after() {
+                return new ArgumentsField(schema.Cursor, true);
+              },
+              get orderBy() {
+                return new ArgumentsField(
+                  new ArrayNode(schema.TasksOrderBy, true),
+                  true
+                );
+              },
+              get condition() {
+                return new ArgumentsField(schema.TaskCondition, true);
+              }
+            }),
+            false
+          );
+        },
+        get childrenTasks() {
+          return new FieldNode(
+            new ArrayNode(schema.Task, true),
+            new Arguments({
+              get taskId() {
+                return new ArgumentsField(schema.Int, true);
+              },
+              get first() {
+                return new ArgumentsField(schema.Int, true);
+              },
+              get offset() {
+                return new ArgumentsField(schema.Int, true);
+              },
+              get orderBy() {
+                return new ArgumentsField(
+                  new ArrayNode(schema.TasksOrderBy, true),
+                  true
+                );
+              },
+              get condition() {
+                return new ArgumentsField(schema.TaskCondition, true);
+              }
+            }),
+            true
+          );
+        },
+        get childrenTasksCounts() {
+          return new FieldNode(
+            schema.Count,
+            new Arguments({
+              get taskId() {
+                return new ArgumentsField(schema.Int, true);
+              }
+            }),
+            true
+          );
+        },
         get descendantTasksConnection() {
           return new FieldNode(
             schema.TasksConnection,
@@ -838,6 +910,9 @@ export const schema = {
             }),
             false
           );
+        },
+        get childrenCounts() {
+          return new FieldNode(schema.Count, undefined, true);
         },
         get descendantCounts() {
           return new FieldNode(schema.Count, undefined, true);

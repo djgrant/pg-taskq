@@ -197,6 +197,38 @@ type t_Query = FieldsType<
     /**
      * Reads and enables pagination through a set of `Task`.
      */
+    childrenTasksConnection: FieldsTypeArg<
+      {
+        taskId?: number | null;
+        first?: number | null;
+        last?: number | null;
+        offset?: number | null;
+        before?: any | null;
+        after?: any | null;
+        orderBy?: TasksOrderBy[] | null;
+        condition?: TaskCondition | null;
+      },
+      t_TasksConnection
+    >;
+
+    /**
+     * Reads and enables pagination through a set of `Task`.
+     */
+    childrenTasks: FieldsTypeArg<
+      {
+        taskId?: number | null;
+        first?: number | null;
+        offset?: number | null;
+        orderBy?: TasksOrderBy[] | null;
+        condition?: TaskCondition | null;
+      },
+      t_Task[]
+    >;
+    childrenTasksCounts: FieldsTypeArg<{ taskId?: number | null }, t_Count>;
+
+    /**
+     * Reads and enables pagination through a set of `Task`.
+     */
     descendantTasksConnection: FieldsTypeArg<
       {
         taskId?: number | null;
@@ -472,6 +504,7 @@ type t_Task = FieldsType<
       { first?: number | null; offset?: number | null },
       (t_Task | null)[]
     >;
+    childrenCounts?: t_Count | null;
     descendantCounts?: t_Count | null;
 
     /**

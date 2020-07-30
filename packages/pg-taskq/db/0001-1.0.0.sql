@@ -103,9 +103,10 @@ CREATE FUNCTION tasks_latest_execution(inputTask tasks) RETURNS executions AS $$
     AND t.id = e.task_id 
     ORDER BY started_at DESC
     LIMIT 1;
-$$ LANGUAGE SQL STABLE;
+$$ 
+LANGUAGE SQL STABLE;
 
-CREATE FUNCTION descendant_tasks(task_id int) RETURNS setof extended_tasks AS $$
+CREATE FUNCTION descendant_tasks(task_id int) RETURNS setof tasks AS $$
 	WITH RECURSIVE child_tasks AS (
 		SELECT * FROM tasks
 			WHERE CASE WHEN $1 IS NULL 
@@ -137,6 +138,33 @@ CREATE FUNCTION descendant_tasks_counts(task_id int) RETURNS counts AS $$
 $$ 
 LANGUAGE SQL STABLE;
 
+CREATE FUNCTION children_tasks(task_id int) RETURNS setof tasks AS $$
+	SELECT * FROM tasks
+	WHERE CASE WHEN $1 IS NULL 
+	THEN 
+		parent_id IS NULL 
+	ELSE 
+		parent_id = $1 
+	END
+$$ 
+LANGUAGE SQL STABLE;
+COMMENT ON FUNCTION children_tasks IS E'@sortable\n@filterable';
+
+CREATE FUNCTION children_tasks_counts(task_id int) RETURNS counts AS $$
+	WITH child_tasks AS (
+		SELECT *, tasks_status(d) as status FROM children_tasks(task_id) d
+	)
+	SELECT
+		(SELECT count(*) FROM child_tasks c WHERE c.status = 'running'),
+		(SELECT count(*) FROM child_tasks c WHERE c.status = 'success'),
+		(SELECT count(*) FROM child_tasks c WHERE c.status = 'failure'),
+		(SELECT count(*) FROM child_tasks c WHERE c.status = 'pending'),
+		(SELECT count(*) FROM child_tasks c WHERE c.status = 'timeout'),
+		(SELECT count(*) FROM child_tasks c WHERE c.status = 'scheduled'),
+		(SELECT count(*) FROM child_tasks);
+$$ 
+LANGUAGE SQL STABLE;
+
 CREATE FUNCTION tasks_descendants(t tasks) RETURNS SETOF tasks AS $$
 	SELECT * FROM descendant_tasks(t.id)
 $$ 
@@ -146,6 +174,12 @@ CREATE FUNCTION tasks_descendant_counts(t tasks) RETURNS counts AS $$
 	SELECT * FROM descendant_tasks_counts(t.id)
 $$ 
 LANGUAGE SQL STABLE;
+
+CREATE FUNCTION tasks_children_counts(t tasks) RETURNS counts AS $$
+	SELECT * FROM children_tasks_counts(t.id)
+$$ 
+LANGUAGE SQL STABLE;
+
 
 --- VIEWS --
 

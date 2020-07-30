@@ -1,4 +1,12 @@
-export const Query = {};
+import { observable } from "mobx";
+
+export const Query = {
+  local: {
+    searchForm: observable.object({
+      descendants: "all"
+    })
+  }
+};
 
 /**
  * Add a key to a type

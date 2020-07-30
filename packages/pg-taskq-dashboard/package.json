@@ -24,6 +24,8 @@
     "animate.css": "^4.1.0",
     "dayjs": "^1.8.30",
     "gqless": "^0.0.1-alpha.29",
+    "mobx": "^5.15.4",
+    "mobx-react": "^6.2.5",
     "react": "^16.13.1",
     "react-dom": "^16.13.1",
     "react-scripts": "3.4.1",

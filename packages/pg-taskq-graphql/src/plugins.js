@@ -13,7 +13,9 @@ module.exports = makePluginByCombiningPlugins(
       children: false,
       descendants: false,
       childrenConnection: false,
-      descendantsConnection: false
+      descendantsConnection: false,
+      childrenCounts: false,
+      descendantsCounts: false
     },
     ExtendedTask: {
       id: false,
@@ -29,7 +31,9 @@ module.exports = makePluginByCombiningPlugins(
     },
     Query: {
       descendantTasks: false,
-      descendantTaskCounts: false
+      descendantTaskCounts: false,
+      childrenTasks: false,
+      childrenTaskCounts: false
     },
     children: {
       Task: false

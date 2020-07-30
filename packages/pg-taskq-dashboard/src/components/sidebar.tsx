@@ -1,7 +1,8 @@
-import React, { Suspense } from "react";
+import React, { Suspense, useState } from "react";
 import { Match } from "@reach/router";
 import { Badge, H6, Label, Input, Tabs, Tab } from "@djgrant/components";
 import { graphql, usePoll } from "@gqless/react";
+import { observer } from "mobx-react";
 import { query } from "../graphql";
 
 export const counts = {
@@ -53,16 +54,7 @@ export const Sidebar = () => (
           </Tabs>
           <div className="px-6 space-y-4">
             <H6>Descendants</H6>
-            <div className="space-y-2">
-              <Label layout="col">
-                <Input type="radio" name="descendants" value="all" checked />
-                <span>All</span>
-              </Label>
-              <Label layout="col">
-                <Input type="radio" name="descendants" value="direct" />
-                <span>Direct</span>
-              </Label>
-            </div>
+            <DescendantsForm />
           </div>
         </div>
       );
@@ -75,15 +67,50 @@ interface LiveCountProps {
   taskId: number | null;
 }
 
-const LiveCount = graphql(({ field, taskId }: LiveCountProps) => {
-  const count = query.descendantTasksCounts({ taskId })[
-    field as keyof typeof counts
-  ];
-  usePoll(count, 5000);
-  return count;
-});
+const LiveCount = observer(
+  graphql(({ field, taskId }: LiveCountProps) => {
+    const { descendants } = query.local.searchForm;
+    const countQuery =
+      descendants === "all" ? "descendantTasksCounts" : "childrenTasksCounts";
+    const count = query[countQuery]({ taskId })[field as keyof typeof counts];
+    usePoll(count, 5000);
+    return count;
+  })
+);
 
 const TaskName = graphql(({ taskId }: { taskId: number | null }) => {
   if (!taskId) return "Root tasks";
   return query.task({ id: taskId })?.name;
+});
+
+const DescendantsForm = observer(() => {
+  const searchForm = query.local.searchForm;
+  return (
+    <div className="space-y-2">
+      <Label layout="col">
+        <Input
+          type="radio"
+          name="descendants"
+          value="all"
+          checked={searchForm.descendants === "all"}
+          onChange={(e) => {
+            searchForm.descendants = "all";
+          }}
+        />
+        <span>All</span>
+      </Label>
+      <Label layout="col">
+        <Input
+          type="radio"
+          name="descendants"
+          value="direct"
+          checked={searchForm.descendants === "direct"}
+          onChange={(e) => {
+            searchForm.descendants = "direct";
+          }}
+        />
+        <span>Direct</span>
+      </Label>
+    </div>
+  );
 });
