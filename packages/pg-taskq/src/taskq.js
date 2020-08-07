@@ -181,6 +181,10 @@ class PgTaskQ {
     return take;
   }
 
+  handler(cb) {
+    return cb;
+  }
+
   enqueue(task, params) {
     if (typeof task === "string") {
       task = { name: task, params };
