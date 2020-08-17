@@ -1,28 +1,36 @@
 import { deserializeError } from "serialize-error";
+import indentString from "indent-string";
 
-const getErrorMeta = (err: Error) =>
-  Object.entries(err).reduce(
+export function formatLogMessage(message: any) {
+  return JSON.stringify(message, replacer, 4)
+    .replace(/\\+n/g, "\n")
+    .replace(/\\+/g, "");
+}
+
+const replacer = (_: string, value: any) => {
+  if (
+    value !== null &&
+    typeof value === "object" &&
+    "name" in value &&
+    "stack" in value &&
+    "message" in value
+  ) {
+    value = deserializeError(value);
+
+    if (Object.keys(value).length) {
+      value =
+        value.stack +
+        "\n" +
+        indentString(JSON.stringify(getErrorMeta(value), replacer, 4), 4);
+    }
+  }
+
+  return value;
+};
+
+function getErrorMeta(err: Error) {
+  return Object.entries(err).reduce(
     (acc, [k, v]) => Object.assign(acc, { [k]: v }),
     {}
   );
-
-export const formatLogMessage = (message: any) => {
-  if (
-    message !== null &&
-    typeof message === "object" &&
-    "name" in message &&
-    "stack" in message &&
-    "message" in message
-  ) {
-    message = deserializeError(message);
-
-    if (Object.keys(message).length) {
-      message =
-        message.stack + "\n" + JSON.stringify(getErrorMeta(message), null, 4);
-    }
-  } else {
-    message = JSON.stringify(message, null, 4);
-  }
-
-  return message;
-};
+}
