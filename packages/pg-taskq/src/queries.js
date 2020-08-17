@@ -15,9 +15,9 @@ const processNextTask = ({
   backoffDelay,
   backoffDecay,
   concurrentExecutions,
-  maxAttempts,
+  maxAttempts
 }) => sql`
-    WITH next_tasks AS (
+    WITH next_task AS (
         SELECT id, name
         FROM extended_tasks
         WHERE (SELECT count(*) FROM extended_tasks WHERE status = 'running') < ${concurrentExecutions}
@@ -35,12 +35,13 @@ const processNextTask = ({
                 last_executed + (${backoffDelay}::interval * attempts) < now()
             END
         )
-        ORDER BY execute_at
+        ORDER BY execute_at ASC
+        LIMIT 1
         FOR UPDATE SKIP LOCKED
     )
     INSERT INTO executions (task_id)
-    SELECT id FROM next_tasks LIMIT 1
-    RETURNING id, (SELECT name FROM next_tasks LIMIT 1) as task_name;
+    SELECT id FROM next_task
+    RETURNING id, (SELECT name FROM next_task) as task_name;
 `;
 
 const selectTimedOutExecutions = ({ timeout }) => sql`
@@ -55,7 +56,7 @@ const insertTaskToExecuteAtDateTime = ({
   params,
   context,
   executeAtDateTime,
-  parentId,
+  parentId
 }) => sql`
     INSERT INTO tasks (name, params, context, parent_id, execute_at) 
     VALUES (${name}, ${params}, ${context}, ${parentId}, ${executeAtDateTime})
@@ -69,7 +70,7 @@ const insertTaskToExecuteIn = ({
   params,
   context,
   executeIn,
-  parentId,
+  parentId
 }) => sql`
     INSERT INTO tasks (name, params, context, parent_id, execute_at) 
     VALUES (${name}, ${params}, ${context}, ${parentId}, now() + ${executeIn}::interval)
@@ -83,7 +84,7 @@ const insertTaskToExecuteInSumOf = ({
   params,
   context,
   parentId,
-  executeInSumOf: { datetime, interval },
+  executeInSumOf: { datetime, interval }
 }) => sql`
     INSERT INTO tasks (name, params, context, parent_id, execute_at) 
     VALUES (${name}, ${params}, ${context}, ${parentId}, ${datetime}::timestamp with time zone + ${interval}::interval)
@@ -149,5 +150,5 @@ module.exports = {
   updateExecutionSuccess,
   updateExecutionFailure,
   updateExecutionTimeout,
-  insertLogs,
+  insertLogs
 };

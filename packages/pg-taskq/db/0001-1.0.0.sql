@@ -36,16 +36,17 @@ CREATE TYPE counts AS (
     total BIGINT
 );
 
+
 --- INDXES ---
 
 CREATE INDEX on executions (task_id, started_at DESC);
 CREATE INDEX on tasks (id, parent_id);
-CREATE INDEX on tasks (id, execute_at DESC, parent_id);
+CREATE INDEX on tasks (execute_at DESC);
+CREATE INDEX on tasks (execute_at ASC);
 CREATE INDEX on logs (execution_id, time);
 
 
 --- FUNCTIONS --
-
 
 CREATE FUNCTION tasks_status(t tasks) RETURNS VARCHAR AS $$
    SELECT COALESCE(
@@ -184,18 +185,50 @@ LANGUAGE SQL STABLE;
 --- VIEWS --
 
 CREATE VIEW extended_tasks AS
-SELECT t.id,
-    t.parent_id,
-    t.name,
-    t.params,
-    t.context,
-    t.execute_at,
-    t.locked,
-    tasks_status(t) AS status,
-    tasks_last_executed(t) AS last_executed,
-    tasks_attempts(t) AS attempts
-FROM tasks t
-ORDER BY t.id;
+    SELECT t.id,
+        t.parent_id,
+        t.name,
+        t.params,
+        t.context,
+        t.execute_at,
+        t.locked,
+        (
+            SELECT COALESCE(
+                (
+                    SELECT e.status
+                    FROM executions e
+                    WHERE e.task_id = t.id
+                    ORDER BY e.started_at DESC
+                    LIMIT 1
+                ), 
+                (
+                    SELECT COALESCE(
+                        (
+                            SELECT 'scheduled'
+                            FROM tasks tt
+                            WHERE tt.id = t.id
+                            AND tt.execute_at > now()
+                            LIMIT 1
+                        ), 
+                        'pending'
+                    ) 
+                )
+            )
+        ) AS status,
+        (
+            SELECT e.started_at
+            FROM executions e
+            WHERE e.task_id = t.id
+            ORDER BY e.started_at DESC
+            LIMIT 1
+        ) AS last_executed,
+        (
+            SELECT count(*)::integer AS COUNT
+            FROM executions e
+            WHERE e.task_id = t.id
+        ) AS attempts
+    FROM tasks t;
+
 
 
 --- FUNCTIONS (TRIGGERS) --
