@@ -11,14 +11,15 @@ CREATE TABLE tasks (
 
 CREATE TABLE executions (
     id serial PRIMARY KEY,
-    task_id integer NOT NULL REFERENCES tasks(id),
+    task_id integer NOT NULL REFERENCES tasks(id) ON DELETE CASCADE ON UPDATE CASCADE,
     status character varying NOT NULL DEFAULT 'running',
-    started_at timestamp with time zone DEFAULT now()
+    started_at timestamp with time zone DEFAULT now(),
+    finished_at timestamp with time zone
 );
 
 CREATE TABLE logs (
     id serial PRIMARY KEY,
-    execution_id integer NOT NULL REFERENCES executions(id),
+    execution_id integer NOT NULL REFERENCES executions(id) ON DELETE CASCADE ON UPDATE CASCADE,
     time timestamp with time zone DEFAULT now(),
     message jsonb
 );
@@ -178,6 +179,11 @@ LANGUAGE SQL STABLE;
 
 CREATE FUNCTION tasks_children_counts(t tasks) RETURNS counts AS $$
 	SELECT * FROM children_tasks_counts(t.id)
+$$ 
+LANGUAGE SQL STABLE;
+
+CREATE FUNCTION executions_duration(e executions) RETURNS INTERVAL AS $$
+    SELECT (e.finished_at - e.started_at) FROM executions e
 $$ 
 LANGUAGE SQL STABLE;
 
