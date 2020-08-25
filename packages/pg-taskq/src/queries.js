@@ -96,7 +96,7 @@ const insertTaskToExecuteInSumOf = ({
 const updateExecutionSuccess = ({ id }) => sql`
     WITH updated AS (
         UPDATE executions
-        SET status = 'success'
+        SET status = 'success', finished_at = now()
         WHERE id = ${id}
         RETURNING task_id
     )
@@ -108,7 +108,7 @@ const updateExecutionSuccess = ({ id }) => sql`
 const updateExecutionFailure = ({ id, maxAttempts }) => sql`
     WITH updated AS (
         UPDATE executions
-        SET status = 'failure'
+        SET status = 'failure', finished_at = now()
         WHERE id = ${id}
         RETURNING task_id
     )
@@ -121,7 +121,7 @@ const updateExecutionFailure = ({ id, maxAttempts }) => sql`
 const updateExecutionTimeout = ({ id, maxAttempts }) => sql`
     WITH updated AS (
         UPDATE executions
-        SET status = 'timeout'
+        SET status = 'timeout', finished_at = now()
         WHERE id = ${id}
         RETURNING task_id
     )
