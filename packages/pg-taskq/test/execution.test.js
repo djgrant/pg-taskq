@@ -1,10 +1,10 @@
-const { setup } = require("./utils");
+const { setup, pause } = require("./utils");
 const { PgTaskQ } = require("pg-taskq");
 
 let taskq;
 
 beforeAll(async () => {
-  taskq = await setup({ schema: "execution_test" });
+  taskq = await setup({ schema: "execution_test", timeout: "0.1s" });
   taskq.start();
 });
 
@@ -137,6 +137,19 @@ describe("Chained methods", () => {
       .onFailure(() => done());
   });
 
+  test("onComplete", (done) => {
+    taskq.enqueue("Outer task");
+    taskq
+      .take("Outer task")
+      .onExecute(({ taskq }) => {
+        taskq.enqueue("Inner task");
+      })
+      .onComplete(() => {
+        done();
+      });
+    taskq.take("Inner task", () => {});
+  });
+
   test("async success", (done) => {
     let testValue;
     taskq.enqueue("Test async success");
@@ -161,5 +174,19 @@ describe("Chained methods", () => {
       })
       .onSuccess(() => done(new Error("Should not succeed")))
       .onFailure(() => done());
+  });
+
+  test("task succeeds even after timeout if the execution process continues running", (done) => {
+    const timeoutMock = jest.fn();
+    taskq.enqueue("Test locked success");
+    taskq
+      .take("Test locked success", async () => {
+        await pause(150);
+      })
+      .onTimeout(timeoutMock)
+      .onSuccess(() => {
+        expect(timeoutMock).toBeCalled();
+        done();
+      });
   });
 });

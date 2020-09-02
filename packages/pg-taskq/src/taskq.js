@@ -141,6 +141,12 @@ class PgTaskQ {
         take.onSuccessCallback(params);
       });
 
+      this.on("complete", (params) => {
+        if (taskName !== params.task.name) return;
+        if (typeof take.onCompleteCallback !== "function") return;
+        take.onCompleteCallback(params);
+      });
+
       this.on("running", async (params) => {
         const onExecuteCallback = takeCallback || take.onExecuteCallback;
         if (taskName !== params.task.name) return;

@@ -1,4 +1,3 @@
-const df = require("date-fns/fp");
 const { setup, pause } = require("./utils");
 
 let taskq;
@@ -103,6 +102,16 @@ test("Locked event", (done) => {
   });
 });
 
-test.todo(
-  "It still succeeds even after timeout if the process is not cancelled"
-);
+test("Complete event", (done) => {
+  taskq.take("Outer task", ({ taskq }) => {
+    taskq.enqueue("Inner task");
+  });
+  taskq.take("Inner task", () => {});
+  taskq.enqueue("Outer task");
+  taskq.on("complete", ({ task }) => {
+    if (task.name === "Outer task") {
+      expect(task.status).toBe("success");
+      done();
+    }
+  });
+});

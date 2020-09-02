@@ -96,19 +96,29 @@ create trigger execution_updated
 
 -- computed task stats --
 
-create function on_task_status_change () returns trigger as $$ 
+create function on_task_change () returns trigger as $$ 
 declare
 	old_status varchar; -- pg version < 12 cannot read old.status
+	locked boolean;
 begin 
 	case 
+		when TG_ARGV[0] = 'locked' then
+			locked = true;
+		when TG_ARGV[0] = 'unlocked' then
+			locked = false;
+		else
+			locked = null;
+	end case;
+	
+	case
 		when TG_OP = 'INSERT' then
 			old_status = null;
 		when TG_OP = 'UPDATE' then
 			old_status = old.status;
 	end case;
 
-	perform update_parent_task_children_stats(new.parent_id, new.status, old_status);
- 	perform update_ancestor_tasks_descendants_stats(new.parent_id, new.status, old_status);
+	perform update_parent_task_children_stats(new.parent_id, new.status, old_status, locked);
+ 	perform update_ancestor_tasks_descendants_stats(new.parent_id, new.status, old_status, locked);
   
 	return new;
 end
@@ -118,7 +128,8 @@ $$ language plpgsql volatile;
 create function update_parent_task_children_stats (
 	parent_task_id integer, 
 	new_status varchar, 
-	old_status varchar
+	old_status varchar,
+	locked boolean
 ) 
 returns void as $$
 declare
@@ -133,7 +144,8 @@ begin
 		children_stats_updated = update_stats(
 			parent_task.children_stats, 
 			new_status, 
-			old_status
+			old_status,
+			locked
 		);
     
 		update tasks 
@@ -147,7 +159,8 @@ $$ language plpgsql volatile;
 create function update_ancestor_tasks_descendants_stats (
 	parent_task_id integer, 
 	new_status varchar, 
-	old_status varchar
+	old_status varchar,
+	locked boolean
 ) 
 returns void as $$
 declare
@@ -162,7 +175,8 @@ begin
 		descendants_stats_updated = update_stats(
 			parent_task.descendants_stats, 
 			new_status, 
-			old_status
+			old_status,
+			locked
 		);
 		
 		update tasks 
@@ -173,7 +187,8 @@ begin
 		perform update_ancestor_tasks_descendants_stats(
 			parent_task.parent_id, 
 			new_status, 
-			old_status
+			old_status,
+			locked
 		);
 	end if;
 end
@@ -182,12 +197,22 @@ $$ language plpgsql volatile;
 
 create trigger task_inserted 
 	after insert on tasks
-	for each row execute procedure on_task_status_change();
+	for each row execute procedure on_task_change();
 
 create trigger task_status_updated 
 	after update on tasks
 	for each row when (old.status is distinct from new.status) 
-	execute procedure on_task_status_change();
+	execute procedure on_task_change();
+
+create trigger task_locked
+	after update on tasks
+	for each row when (old.locked = false and new.locked = true)
+	execute procedure on_task_change('locked');
+
+create trigger task_unlocked
+	after update on tasks
+	for each row when (old.locked = true and new.locked = false)
+	execute procedure on_task_change('unlocked');
 
 
 -- table functions --
@@ -236,7 +261,7 @@ begin
 
 	-- it's important to run this query sequentially (e.g. not in a CTE)
 	-- otherwise the locked event will trigger before the status_change event
-	if current_attempts >= max_attempts then
+	if (current_attempts >= max_attempts or updated_execution.status = 'success') then
 		update tasks
 		set locked = true
 		where id = task_id;
@@ -315,19 +340,27 @@ end
 $$ language plpgsql volatile;
 
 
-create trigger task_inserted_event
+create trigger task_event_1_inserted
 	after insert on tasks
 	for each row execute procedure dispatch_task_event('status_change');
 
-create trigger task_status_updated_event
+create trigger task_event_2_updated
 	after update on tasks
 	for each row when (old.status is distinct from new.status) 
 	execute procedure dispatch_task_event('status_change');
 
-create trigger task_locked_event
+create trigger task_event_3_locked
 	after update on tasks
 	for each row when (old.locked = false and new.locked = true)
 	execute procedure dispatch_task_event('locked');
+
+create trigger task_event_4_completed
+	after update on tasks
+	for each row when (
+		(old.descendants_stats ->> 'locked')::numeric != (old.descendants_stats ->> 'total')::numeric and
+		(new.descendants_stats ->> 'locked')::numeric = (new.descendants_stats ->> 'total')::numeric
+	)
+	execute procedure dispatch_task_event('complete'); 
 
 
 -- utility functions --
@@ -343,7 +376,13 @@ end
 $$ language plpgsql stable;
 
 
-create function update_stats (stats jsonb, new_status varchar, old_status varchar) returns jsonb as $$
+create function update_stats (
+	stats jsonb, 
+	new_status varchar, 
+	old_status varchar, 
+	locked boolean
+) 
+returns jsonb as $$
 declare
 	base_stats jsonb := '{
     "pending": 0, 
@@ -352,10 +391,19 @@ declare
     "timeout": 0, 
     "scheduled": 0, 
     "running": 0,
+		"locked": 0,
     "total": 0
   }'::jsonb;
 begin
 	stats = coalesce(stats, base_stats);
+
+	if (locked = true) then
+		return update_stat(stats, 'locked', 1);
+	end if; 
+
+	if (locked = false) then
+		return update_stat(stats, 'locked', -1);
+	end if; 
 	
 	if (old_status is null) then
     stats = update_stat(stats, 'total', 1);

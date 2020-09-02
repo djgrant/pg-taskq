@@ -23,6 +23,10 @@ class Take {
     this.onLockedCallback = cb;
     return this;
   }
+  onComplete(cb) {
+    this.onCompleteCallback = cb;
+    return this;
+  }
 }
 
 module.exports = { Take };
