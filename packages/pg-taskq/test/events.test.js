@@ -17,8 +17,8 @@ afterAll(async () => {
 });
 
 test("Running event", (done) => {
-  taskq.enqueue("Test Task");
   taskq.take("Test Task", () => {});
+  taskq.enqueue("Test Task");
   taskq.on("running", ({ task }) => {
     if (task.name === "Test Task") {
       expect(task.status).toEqual("running");
@@ -103,20 +103,6 @@ test("Locked event", (done) => {
   });
 });
 
-test("No-op event", async (done) => {
-  const time = df.addDays(1, new Date());
-  const { id } = await taskq.schedule({
-    name: "Test no-op",
-    executeAtDateTime: time,
-  });
-  taskq.schedule({
-    name: "Test no-op",
-    executeAtDateTime: time,
-  });
-  taskq.on("no-op", ({ task }) => {
-    if (task.name === "Test no-op") {
-      expect(id).toEqual(task.id);
-      done();
-    }
-  });
-});
+test.todo(
+  "It still succeeds even after timeout if the process is not cancelled"
+);

@@ -17,25 +17,6 @@ it("Runs migrations", async () => {
   `);
   expect(result.rows.map((table) => table.table_name)).toEqual([
     "executions",
-    "extended_tasks",
-    "logs",
-    "migrations",
-    "tasks",
-  ]);
-});
-
-it("Runs migrations in a provided schema", async () => {
-  await exec(`./bin/up.js -f -c ${connectionString} -s schema_test`).catch(
-    console.log
-  );
-  const result = await client.query(`
-    SELECT table_name FROM information_schema.tables 
-    WHERE table_schema = 'schema_test'
-    ORDER BY table_name
-  `);
-  expect(result.rows.map((table) => table.table_name)).toEqual([
-    "executions",
-    "extended_tasks",
     "logs",
     "migrations",
     "tasks",
@@ -54,16 +35,34 @@ it("Clears the tasks queue", async () => {
   expect(result.rowCount).toEqual(0);
 });
 
+it("Runs migrations in a provided schema", async () => {
+  await exec(`./bin/up.js -f -c ${connectionString} -s schema_test`).catch(
+    console.log
+  );
+  const result = await client.query(`
+    SELECT table_name FROM information_schema.tables 
+    WHERE table_schema = 'schema_test'
+    ORDER BY table_name
+  `);
+  expect(result.rows.map((table) => table.table_name)).toEqual([
+    "executions",
+    "logs",
+    "migrations",
+    "tasks",
+  ]);
+});
+
 it("Clears the tasks queue from a provided schema", async () => {
+  await client.query("set search_path to schema_test");
   await client.query(`
-    INSERT INTO schema_test.tasks ("name") VALUES ('Test Task');
-    INSERT INTO schema_test.executions ("task_id") VALUES (1);
+    INSERT INTO tasks ("name") VALUES ('Test Task');
+    INSERT INTO executions ("task_id") VALUES (1);
   `);
   await exec(`./bin/clear.js -f -c ${connectionString} -s schema_test`).catch(
     console.log
   );
   const result = await client.query(
-    `SELECT t.*, e.* FROM schema_test.tasks t, schema_test.executions e`
+    `SELECT t.*, e.* FROM tasks t, executions e`
   );
   expect(result.rowCount).toEqual(0);
 });

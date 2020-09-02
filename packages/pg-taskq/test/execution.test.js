@@ -39,21 +39,26 @@ describe("Callback form", () => {
     });
   });
 
-  it("Is passed the task row", (done) => {
+  it("Is passed the task and execution rows", (done) => {
     taskq.enqueue("Test task row");
-    taskq.take("Test task row", ({ task }) => {
+    taskq.take("Test task row", ({ task, execution }) => {
       expect(task).toMatchObject({
         attempts: 1,
         context: {},
         execute_at: expect.any(String),
-        execution_id: expect.any(Number),
         id: expect.any(Number),
-        last_executed: expect.any(String),
         locked: false,
         name: "Test task row",
         params: {},
         parent_id: null,
         status: "running",
+      });
+      expect(execution).toMatchObject({
+        id: expect.any(Number),
+        status: "running",
+        task_id: task.id,
+        started_at: expect.any(String),
+        finished_at: null,
       });
       done();
     });

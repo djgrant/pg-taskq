@@ -39,7 +39,7 @@ class PgTaskQ {
   }
 
   on(event, subscriber) {
-    this.subscribers.push([`taskq:${event}`, subscriber]);
+    this.subscribers.push([event, subscriber]);
   }
 
   createSubTaskQ({ parentTask }) {
@@ -69,16 +69,17 @@ class PgTaskQ {
     };
   }
 
-  async getExecutionParams(task) {
+  async getExecutionParams(task, execution) {
     const subTaskQ = this.createSubTaskQ({ parentTask: task });
-    const taskLogger = task.execution_id
+    const taskLogger = execution.id
       ? this.createExecutionLogger({
-          executionId: task.execution_id,
+          executionId: execution.id,
         })
       : (msg) => {
           this.log(
             "error",
-            `log() was called when a task was not running with: ${msg}`
+            "log() was called on a task that has not yet started. Skipped log message:",
+            msg
           );
         };
 
@@ -86,7 +87,8 @@ class PgTaskQ {
       context: task.context,
       params: task.params,
       taskq: subTaskQ,
-      task: task,
+      task,
+      execution,
       log: taskLogger,
     };
 
@@ -158,18 +160,22 @@ class PgTaskQ {
 
           this.pool
             .query(
-              queries.updateExecutionSuccess({
-                id: params.task.execution_id,
+              queries.updateExecution({
+                status: "success",
+                executionId: params.execution.id,
+                taskId: params.task.id,
+                maxAttempts: this.maxAttempts,
               })
             )
             .catch(this.log("error"));
         } catch (err) {
           await params.log(err);
-
           this.pool
             .query(
-              queries.updateExecutionFailure({
-                id: params.task.execution_id,
+              queries.updateExecution({
+                status: "failure",
+                executionId: params.execution.id,
+                taskId: params.task.id,
                 maxAttempts: this.maxAttempts,
               })
             )
@@ -376,6 +382,7 @@ class PgTaskQ {
           "error",
           `No task handler defined for ${nextTask.task_name}. Create a hander using taskq.take("${nextTask.task_name}", callback).`
         );
+        // @TODO - mark this execution as failed
       }
       if (this.started && nextTask) {
         await this.processQueue();
@@ -393,8 +400,10 @@ class PgTaskQ {
       Promise.all(
         timedOutExecutions.map((timedOutExecution) =>
           this.pool.query(
-            queries.updateExecutionTimeout({
-              id: timedOutExecution.id,
+            queries.updateExecution({
+              status: "timeout",
+              executionId: timedOutExecution.id,
+              taskId: timedOutExecution.task_id,
               maxAttempts: this.maxAttempts,
             })
           )
@@ -418,16 +427,27 @@ class PgTaskQ {
   async setUpEventListeners() {
     const client = (this.notificationClient = await this.pool.connect());
     await client.query(queries.listen());
+
     client.on("notification", ({ channel, payload }) => {
-      let task = payload;
+      if (channel != "taskq") return;
       try {
-        task = JSON.parse(payload);
-      } catch {}
-      this.subscribers.forEach(async ([event, subscriber]) => {
-        if (channel !== event) return;
-        const params = await this.getExecutionParams(task);
-        subscriber(params);
-      });
+        const message = JSON.parse(payload);
+        this.subscribers.forEach(async ([event, subscriber]) => {
+          const isEventNameMatch = event === message.event;
+          const isStatusMatch =
+            message.event === "status_change" && event === message.task.status;
+
+          if (isEventNameMatch || isStatusMatch) {
+            const params = await this.getExecutionParams(
+              message.task,
+              message.execution
+            );
+            subscriber(params);
+          }
+        });
+      } catch (err) {
+        this.log("error", "Failed to parse event", err);
+      }
     });
   }
 
