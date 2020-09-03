@@ -31,18 +31,17 @@ const Row = tw.div(
 type TasksProps = RouteComponentProps<{ taskId?: string }>;
 
 export const Tasks: React.FC<TasksProps> = observer(
-  graphql(props => {
+  graphql((props) => {
     const taskId = props.taskId ? Number(props.taskId) || null : null;
     const params = useParams();
     const queryParams = {
       taskId,
       first: 15,
       orderBy: [TasksOrderBy.LAST_EXECUTED_DESC],
-      condition: params.status === "total" ? null : { status: params.status }
+      condition: params.status === "total" ? null : { status: params.status },
     };
     const { descendants } = query.local.searchForm;
-    const tasksQuery =
-      descendants === "all" ? "descendantTasks" : "childrenTasks";
+    const tasksQuery = descendants === "all" ? "descendantTasks" : "childTasks";
     const tasks = query[tasksQuery](queryParams);
 
     usePoll(tasks, 5000);
@@ -55,7 +54,7 @@ export const Tasks: React.FC<TasksProps> = observer(
       <>
         <div className="space-y-3">
           {tasks.map(
-            task =>
+            (task) =>
               task?.id && (
                 <Link
                   key={task.id}

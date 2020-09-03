@@ -13,7 +13,7 @@ export const counts = {
   running: { label: "Running", color: "indigo" },
   success: { label: "Successful", color: "green" },
   failure: { label: "Failed", color: "red" },
-  timeout: { label: "Timed out", color: "orange" }
+  timeout: { label: "Timed out", color: "orange" },
 };
 
 export const Sidebar = () => (
@@ -70,13 +70,22 @@ interface LiveCountProps {
 }
 
 const LiveCount = observer(
-  graphql(({ field, taskId }: LiveCountProps) => {
+  graphql(({ taskId, field }: LiveCountProps) => {
+    let stats;
     const { descendants } = query.local.searchForm;
-    const countQuery =
-      descendants === "all" ? "descendantTasksCounts" : "childrenTasksCounts";
-    const count = query[countQuery]({ taskId })[field as keyof typeof counts];
-    usePoll(count, 5000);
-    return count;
+
+    if (taskId !== null) {
+      const statsQuery =
+        descendants === "all" ? "descendantsStats" : "childrenStats";
+      stats = query.task({ id: taskId })![statsQuery];
+    } else {
+      const statsQuery =
+        descendants === "all" ? "rootDescendantsStats" : "rootChildrenStats";
+      stats = query[statsQuery];
+    }
+
+    usePoll(stats, 5000);
+    return stats ? stats[field] : 0;
   })
 );
 

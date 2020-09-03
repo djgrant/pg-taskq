@@ -24,7 +24,7 @@ export const Info: React.FC<InfoProps> = graphql(({ taskId }) => {
           value={dayjs(task.lastExecuted).toString()}
         />
       )}
-      <DataRow label="Child tasks" value={task.children.length} />
+      <DataRow label="Child tasks" value={task.childTasks.length} />
       <DataRow label="Params">
         <pre>
           <code>{JSON.stringify(task.params, null, 2)}</code>

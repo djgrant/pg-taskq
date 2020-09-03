@@ -10,7 +10,7 @@ const countsMap = {
   timeout: { label: "Timed out", color: "orange" },
   running: { label: "Running", color: "indigo" },
   pending: { label: "Pending", color: "yellow" },
-  scheduled: { label: "Scheduled", color: "white" }
+  scheduled: { label: "Scheduled", color: "white" },
 };
 
 interface ProgressProps {
@@ -19,16 +19,19 @@ interface ProgressProps {
 
 export const DescendantTaskProgress: React.FC<ProgressProps> = graphql(
   ({ task }) => {
-    const counts = task!.descendantCounts;
-    const total = Number.parseFloat(counts!.total);
-    const pending = Number.parseFloat(counts!.pending);
-    const scheduled = Number.parseFloat(counts!.scheduled);
-    const success = Number.parseFloat(counts!.success);
-    const running = Number.parseFloat(counts!.running);
+    const counts = task!.descendantsStats;
+
+    if (!counts) return null;
+
+    const total = Number.parseFloat(counts.total);
+    const pending = Number.parseFloat(counts.pending);
+    const scheduled = Number.parseFloat(counts.scheduled);
+    const success = Number.parseFloat(counts.success);
+    const running = Number.parseFloat(counts.running);
     const todo = pending + scheduled;
     const remaining = scheduled + pending;
 
-    if (!counts?.total) return null;
+    if (!counts.total) return null;
 
     let text;
     let bars;
@@ -60,10 +63,10 @@ export const DescendantTaskProgress: React.FC<ProgressProps> = graphql(
           return {
             label: `${props.label} (${keyCount})`,
             color: props.color,
-            pc
+            pc,
           };
         })
-        .filter(v => v.pc > 0);
+        .filter((v) => v.pc > 0);
     }
 
     return (

@@ -2,8 +2,8 @@ create table tasks (
 	id serial primary key,
 	parent_id integer references tasks(id) on delete cascade,
 	name text not null,
-  params jsonb,
-  context jsonb,
+	params jsonb,
+	context jsonb,
 	execute_at timestamptz not null default now(),
 	locked boolean default false not null,
 	status varchar not null,
@@ -35,6 +35,7 @@ create index on executions (task_id, started_at desc);
 create index on tasks (id, parent_id);
 create index on tasks (execute_at desc);
 create index on tasks (execute_at asc);
+create index on tasks (status);
 create index on logs (execution_id, time);
 
 
@@ -79,7 +80,7 @@ begin
 	set status = task.status, attempts = task.attempts
 	where id = task.id;
 		
-  return new;
+	return new;
 end
 $$ language plpgsql volatile;
 
@@ -119,7 +120,7 @@ begin
 
 	perform update_parent_task_children_stats(new.parent_id, new.status, old_status, locked);
  	perform update_ancestor_tasks_descendants_stats(new.parent_id, new.status, old_status, locked);
-  
+
 	return new;
 end
 $$ language plpgsql volatile;
@@ -134,12 +135,12 @@ create function update_parent_task_children_stats (
 returns void as $$
 declare
 	parent_task tasks;
-  children_stats_updated jsonb;
+	children_stats_updated jsonb;
 begin
 	select * into parent_task 
 	from tasks 
 	where id = parent_task_id;
-  
+
 	if (parent_task.id is not null) then
 		children_stats_updated = update_stats(
 			parent_task.children_stats, 
@@ -147,7 +148,7 @@ begin
 			old_status,
 			locked
 		);
-    
+
 		update tasks 
 		set children_stats = children_stats_updated 
 		where id = parent_task.id;
@@ -164,8 +165,8 @@ create function update_ancestor_tasks_descendants_stats (
 ) 
 returns void as $$
 declare
-  parent_task tasks;
-  descendants_stats_updated jsonb;
+	parent_task tasks;
+	descendants_stats_updated jsonb;
 begin
 	select * into parent_task 
 	from tasks 
@@ -214,6 +215,64 @@ create trigger task_unlocked
 	for each row when (old.locked = true and new.locked = false)
 	execute procedure on_task_change('unlocked');
 
+-- search functions --
+
+create function descendant_tasks(task_id int) returns setof tasks as $$
+	with recursive child_tasks as (
+		select * from tasks
+			where case when $1 is null 
+			then 
+				parent_id is null 
+			else 
+				parent_id = $1 
+			end
+		union all
+		select t.* from tasks t, child_tasks c where t.parent_id = c.id
+	) 
+	select * from child_tasks;
+$$ language sql stable;
+
+comment on function descendant_tasks(int) is e'@sortable\n@filterable';
+
+
+create function child_tasks(task_id int) returns setof tasks as $$
+	select * from tasks
+	where case when $1 is null 
+	then 
+		parent_id is null 
+	else 
+		parent_id = $1 
+	end
+$$ language sql stable;
+
+comment on function child_tasks(int) is e'@sortable\n@filterable';
+
+
+create function root_descendants_stats() returns jsonb as $$
+	select jsonb_build_object( 
+		'success', (select count(*) from tasks where status = 'success'),
+		'failure', (select count(*) from tasks where status = 'failure'),
+		'timeout', (select count(*) from tasks where status = 'timeout'),
+		'running', (select count(*) from tasks where status = 'running'),
+		'pending', (select count(*) from tasks where status = 'pending'),
+		'scheduled', (select count(*) from tasks where status = 'scheduled'),
+		'total', (select count(*) from tasks)
+	);
+$$ language sql stable;
+
+
+create function root_children_stats() returns jsonb as $$
+	select jsonb_build_object( 
+		'success', (select count(*) from tasks where status = 'success' and parent_id is null),
+		'failure', (select count(*) from tasks where status = 'failure' and parent_id is null),
+		'timeout', (select count(*) from tasks where status = 'timeout' and parent_id is null),
+		'running', (select count(*) from tasks where status = 'running' and parent_id is null),
+		'pending', (select count(*) from tasks where status = 'pending' and parent_id is null),
+		'scheduled', (select count(*) from tasks where status = 'scheduled' and parent_id is null),
+		'total', (select count(*) from tasks where parent_id is null)
+	);
+$$ language sql stable;
+
 
 -- table functions --
 
@@ -225,18 +284,33 @@ create function tasks_last_executed(t tasks) returns timestamptz as $$
 	limit 1;
 $$ language sql stable;
 
-create function tasks_latest_execution (task tasks) returns executions as $$
+comment on function tasks_last_executed(tasks) is '@sortable';
+
+
+create function tasks_latest_execution (t tasks) returns executions as $$
 declare
 	latest_execution executions;
 begin
 	select * into latest_execution
 	from executions e
-	where e.task_id = task.id 
+	where e.task_id = t.id 
 	order by e.started_at desc, e.id desc limit 1;
 	
 	return latest_execution;
 end 
 $$ language plpgsql stable;
+
+
+create function tasks_descendant_tasks(t tasks) returns setof tasks as $$
+	select * from descendant_tasks(t.id)
+$$ 
+language sql stable;
+
+
+create function executions_duration(e executions) returns varchar as $$
+	select to_char(coalesce(e.finished_at, now()) - e.started_at, 'HH24:MI:SS:MS');
+$$ 
+language sql stable;
 
 
 -- mutation functions --
@@ -385,15 +459,15 @@ create function update_stats (
 returns jsonb as $$
 declare
 	base_stats jsonb := '{
-    "pending": 0, 
-    "failure": 0, 
-    "success": 0, 
-    "timeout": 0, 
-    "scheduled": 0, 
-    "running": 0,
-		"locked": 0,
-    "total": 0
-  }'::jsonb;
+	"pending": 0, 
+	"failure": 0, 
+	"success": 0, 
+	"timeout": 0, 
+	"scheduled": 0, 
+	"running": 0,
+	"locked": 0,
+	"total": 0
+	}'::jsonb;
 begin
 	stats = coalesce(stats, base_stats);
 
@@ -406,8 +480,8 @@ begin
 	end if; 
 	
 	if (old_status is null) then
-    stats = update_stat(stats, 'total', 1);
-  else
+	stats = update_stat(stats, 'total', 1);
+	else
 		stats = update_stat(stats, old_status, -1);
 	end if;
 

@@ -4,7 +4,7 @@ import {
   FieldsType,
   FieldsTypeArg,
   ScalarType,
-  EnumType
+  EnumType,
 } from "gqless";
 
 type Extension<TName extends string> = TName extends keyof typeof extensions
@@ -62,35 +62,6 @@ type t_Query = FieldsType<
         condition?: ExecutionCondition | null;
       },
       t_Execution[] | null
-    >;
-
-    /**
-     * Reads and enables pagination through a set of `ExtendedTask`.
-     */
-    extendedTasksConnection: FieldsTypeArg<
-      {
-        first?: number | null;
-        last?: number | null;
-        offset?: number | null;
-        before?: any | null;
-        after?: any | null;
-        orderBy?: ExtendedTasksOrderBy[] | null;
-        condition?: ExtendedTaskCondition | null;
-      },
-      t_ExtendedTasksConnection | null
-    >;
-
-    /**
-     * Reads a set of `ExtendedTask`.
-     */
-    extendedTasks: FieldsTypeArg<
-      {
-        first?: number | null;
-        offset?: number | null;
-        orderBy?: ExtendedTasksOrderBy[] | null;
-        condition?: ExtendedTaskCondition | null;
-      },
-      t_ExtendedTask[] | null
     >;
 
     /**
@@ -184,9 +155,10 @@ type t_Query = FieldsType<
     migration: FieldsTypeArg<{ id: number }, t_Migration | null>;
     migrationByName: FieldsTypeArg<{ name: string }, t_Migration | null>;
     task: FieldsTypeArg<{ id: number }, t_Task | null>;
-    taskByNameAndParamsAndContextAndExecuteAt: FieldsTypeArg<
+    taskByNameAndParentIdAndParamsAndContextAndExecuteAt: FieldsTypeArg<
       {
         name: string;
+        parentId: number;
         params: { [K: string]: any };
         context: { [K: string]: any };
         executeAt: any;
@@ -197,7 +169,7 @@ type t_Query = FieldsType<
     /**
      * Reads and enables pagination through a set of `Task`.
      */
-    childrenTasksConnection: FieldsTypeArg<
+    childTasksConnection: FieldsTypeArg<
       {
         taskId?: number | null;
         first?: number | null;
@@ -214,7 +186,7 @@ type t_Query = FieldsType<
     /**
      * Reads and enables pagination through a set of `Task`.
      */
-    childrenTasks: FieldsTypeArg<
+    childTasks: FieldsTypeArg<
       {
         taskId?: number | null;
         first?: number | null;
@@ -222,9 +194,8 @@ type t_Query = FieldsType<
         orderBy?: TasksOrderBy[] | null;
         condition?: TaskCondition | null;
       },
-      t_Task[]
+      (t_Task | null)[]
     >;
-    childrenTasksCounts: FieldsTypeArg<{ taskId?: number | null }, t_Count>;
 
     /**
      * Reads and enables pagination through a set of `Task`.
@@ -254,9 +225,27 @@ type t_Query = FieldsType<
         orderBy?: TasksOrderBy[] | null;
         condition?: TaskCondition | null;
       },
-      t_Task[]
+      (t_Task | null)[]
     >;
-    descendantTasksCounts: FieldsTypeArg<{ taskId?: number | null }, t_Count>;
+    rootChildrenStats?: t_JSON | null;
+    rootDescendantsStats?: t_JSON | null;
+    updateStat: FieldsTypeArg<
+      {
+        stats?: { [K: string]: any } | null;
+        key?: string | null;
+        value?: number | null;
+      },
+      t_JSON | null
+    >;
+    updateStats: FieldsTypeArg<
+      {
+        stats?: { [K: string]: any } | null;
+        newStatus?: string | null;
+        oldStatus?: string | null;
+        locked?: boolean | null;
+      },
+      t_JSON | null
+    >;
 
     /**
      * Reads a single `Execution` using its globally unique `ID`.
@@ -319,6 +308,8 @@ type t_ExecutionsOrderBy = EnumType<
   | "STATUS_DESC"
   | "STARTED_AT_ASC"
   | "STARTED_AT_DESC"
+  | "FINISHED_AT_ASC"
+  | "FINISHED_AT_DESC"
   | "PRIMARY_KEY_ASC"
   | "PRIMARY_KEY_DESC"
 >;
@@ -332,6 +323,7 @@ export type ExecutionCondition = {
   taskId?: number | null;
   status?: string | null;
   startedAt?: any | null;
+  finishedAt?: any | null;
 };
 
 /**
@@ -392,8 +384,9 @@ type t_Execution = FieldsType<
     nodeId: t_ID;
     id: t_Int;
     taskId: t_Int;
-    status: t_String;
+    status?: t_String | null;
     startedAt?: t_Datetime | null;
+    finishedAt?: t_Datetime | null;
 
     /**
      * Reads a single `Task` that is related to this `Execution`.
@@ -428,6 +421,7 @@ type t_Execution = FieldsType<
       },
       t_Log[]
     >;
+    duration?: t_String | null;
   },
   Extension<"Execution">
 >;
@@ -452,6 +446,44 @@ type t_Task = FieldsType<
     context?: t_JSON | null;
     executeAt: t_Datetime;
     locked: t_Boolean;
+    status: t_String;
+    attempts: t_Int;
+    childrenStats?: t_JSON | null;
+    descendantsStats?: t_JSON | null;
+
+    /**
+     * Reads a single `Task` that is related to this `Task`.
+     */
+    parent?: t_Task | null;
+
+    /**
+     * Reads and enables pagination through a set of `Task`.
+     */
+    childTasksConnection: FieldsTypeArg<
+      {
+        first?: number | null;
+        last?: number | null;
+        offset?: number | null;
+        before?: any | null;
+        after?: any | null;
+        orderBy?: TasksOrderBy[] | null;
+        condition?: TaskCondition | null;
+      },
+      t_TasksConnection
+    >;
+
+    /**
+     * Reads and enables pagination through a set of `Task`.
+     */
+    childTasks: FieldsTypeArg<
+      {
+        first?: number | null;
+        offset?: number | null;
+        orderBy?: TasksOrderBy[] | null;
+        condition?: TaskCondition | null;
+      },
+      t_Task[]
+    >;
 
     /**
      * Reads and enables pagination through a set of `Execution`.
@@ -481,12 +513,11 @@ type t_Task = FieldsType<
       },
       t_Execution[]
     >;
-    attempts?: t_Int | null;
 
     /**
      * Reads and enables pagination through a set of `Task`.
      */
-    childrenConnection: FieldsTypeArg<
+    descendantTasksConnection: FieldsTypeArg<
       {
         first?: number | null;
         last?: number | null;
@@ -500,37 +531,12 @@ type t_Task = FieldsType<
     /**
      * Reads and enables pagination through a set of `Task`.
      */
-    children: FieldsTypeArg<
-      { first?: number | null; offset?: number | null },
-      (t_Task | null)[]
-    >;
-    childrenCounts?: t_Count | null;
-    descendantCounts?: t_Count | null;
-
-    /**
-     * Reads and enables pagination through a set of `Task`.
-     */
-    descendantsConnection: FieldsTypeArg<
-      {
-        first?: number | null;
-        last?: number | null;
-        offset?: number | null;
-        before?: any | null;
-        after?: any | null;
-      },
-      t_TasksConnection
-    >;
-
-    /**
-     * Reads and enables pagination through a set of `Task`.
-     */
-    descendants: FieldsTypeArg<
+    descendantTasks: FieldsTypeArg<
       { first?: number | null; offset?: number | null },
       (t_Task | null)[]
     >;
     lastExecuted?: t_Datetime | null;
     latestExecution?: t_Execution | null;
-    status?: t_String | null;
   },
   Extension<"Task">
 >;
@@ -552,6 +558,58 @@ type t_Boolean<T extends boolean = boolean> = ScalarType<
   T,
   Extension<"Boolean">
 >;
+
+/**
+ * @name TasksOrderBy
+ * @type ENUM
+ */
+type t_TasksOrderBy = EnumType<
+  | "NATURAL"
+  | "ID_ASC"
+  | "ID_DESC"
+  | "PARENT_ID_ASC"
+  | "PARENT_ID_DESC"
+  | "NAME_ASC"
+  | "NAME_DESC"
+  | "PARAMS_ASC"
+  | "PARAMS_DESC"
+  | "CONTEXT_ASC"
+  | "CONTEXT_DESC"
+  | "EXECUTE_AT_ASC"
+  | "EXECUTE_AT_DESC"
+  | "LOCKED_ASC"
+  | "LOCKED_DESC"
+  | "STATUS_ASC"
+  | "STATUS_DESC"
+  | "ATTEMPTS_ASC"
+  | "ATTEMPTS_DESC"
+  | "CHILDREN_STATS_ASC"
+  | "CHILDREN_STATS_DESC"
+  | "DESCENDANTS_STATS_ASC"
+  | "DESCENDANTS_STATS_DESC"
+  | "LAST_EXECUTED_ASC"
+  | "LAST_EXECUTED_DESC"
+  | "PRIMARY_KEY_ASC"
+  | "PRIMARY_KEY_DESC"
+>;
+
+/**
+ * @name TaskCondition
+ * @type INPUT_OBJECT
+ */
+export type TaskCondition = {
+  id?: number | null;
+  parentId?: number | null;
+  name?: string | null;
+  params?: { [K: string]: any } | null;
+  context?: { [K: string]: any } | null;
+  executeAt?: any | null;
+  locked?: boolean | null;
+  status?: string | null;
+  attempts?: number | null;
+  childrenStats?: { [K: string]: any } | null;
+  descendantsStats?: { [K: string]: any } | null;
+};
 
 /**
  * @name TasksConnection
@@ -635,30 +693,6 @@ type t_PageInfo = FieldsType<
   },
   Extension<"PageInfo">
 >;
-
-/**
- * @name Count
- * @type OBJECT
- */
-type t_Count = FieldsType<
-  {
-    __typename: t_String<"Count">;
-    running?: t_BigInt | null;
-    success?: t_BigInt | null;
-    failure?: t_BigInt | null;
-    pending?: t_BigInt | null;
-    timeout?: t_BigInt | null;
-    scheduled?: t_BigInt | null;
-    total?: t_BigInt | null;
-  },
-  Extension<"Count">
->;
-
-/**
- * @name BigInt
- * @type SCALAR
- */
-type t_BigInt<T extends any = any> = ScalarType<T, Extension<"BigInt">>;
 
 /**
  * @name LogsOrderBy
@@ -790,124 +824,6 @@ type t_ExecutionsEdge = FieldsType<
 >;
 
 /**
- * @name ExtendedTasksOrderBy
- * @type ENUM
- */
-type t_ExtendedTasksOrderBy = EnumType<
-  | "NATURAL"
-  | "ID_ASC"
-  | "ID_DESC"
-  | "PARENT_ID_ASC"
-  | "PARENT_ID_DESC"
-  | "NAME_ASC"
-  | "NAME_DESC"
-  | "PARAMS_ASC"
-  | "PARAMS_DESC"
-  | "CONTEXT_ASC"
-  | "CONTEXT_DESC"
-  | "EXECUTE_AT_ASC"
-  | "EXECUTE_AT_DESC"
-  | "LOCKED_ASC"
-  | "LOCKED_DESC"
-  | "STATUS_ASC"
-  | "STATUS_DESC"
-  | "LAST_EXECUTED_ASC"
-  | "LAST_EXECUTED_DESC"
-  | "ATTEMPTS_ASC"
-  | "ATTEMPTS_DESC"
->;
-
-/**
- * @name ExtendedTaskCondition
- * @type INPUT_OBJECT
- */
-export type ExtendedTaskCondition = {
-  id?: number | null;
-  parentId?: number | null;
-  name?: string | null;
-  params?: { [K: string]: any } | null;
-  context?: { [K: string]: any } | null;
-  executeAt?: any | null;
-  locked?: boolean | null;
-  status?: string | null;
-  lastExecuted?: any | null;
-  attempts?: number | null;
-};
-
-/**
- * @name ExtendedTasksConnection
- * @type OBJECT
- */
-type t_ExtendedTasksConnection = FieldsType<
-  {
-    __typename: t_String<"ExtendedTasksConnection">;
-
-    /**
-     * A list of `ExtendedTask` objects.
-     */
-    nodes: (t_ExtendedTask | null)[];
-
-    /**
-     * A list of edges which contains the `ExtendedTask` and cursor to aid in pagination.
-     */
-    edges: t_ExtendedTasksEdge[];
-
-    /**
-     * Information to aid in pagination.
-     */
-    pageInfo: t_PageInfo;
-
-    /**
-     * The count of *all* `ExtendedTask` you could get from the connection.
-     */
-    totalCount: t_Int;
-  },
-  Extension<"ExtendedTasksConnection">
->;
-
-/**
- * @name ExtendedTask
- * @type OBJECT
- */
-type t_ExtendedTask = FieldsType<
-  {
-    __typename: t_String<"ExtendedTask">;
-    id: t_Int;
-    parentId?: t_Int | null;
-    name: t_String;
-    params?: t_JSON | null;
-    context?: t_JSON | null;
-    executeAt: t_Datetime;
-    locked: t_Boolean;
-    status: t_String;
-    lastExecuted?: t_Datetime | null;
-    attempts: t_Int;
-  },
-  Extension<"ExtendedTask">
->;
-
-/**
- * @name ExtendedTasksEdge
- * @type OBJECT
- */
-type t_ExtendedTasksEdge = FieldsType<
-  {
-    __typename: t_String<"ExtendedTasksEdge">;
-
-    /**
-     * A cursor for use in pagination.
-     */
-    cursor?: t_Cursor | null;
-
-    /**
-     * The `ExtendedTask` at the end of the edge.
-     */
-    node?: t_ExtendedTask | null;
-  },
-  Extension<"ExtendedTasksEdge">
->;
-
-/**
  * @name MigrationsOrderBy
  * @type ENUM
  */
@@ -1010,47 +926,6 @@ type t_MigrationsEdge = FieldsType<
 >;
 
 /**
- * @name TasksOrderBy
- * @type ENUM
- */
-type t_TasksOrderBy = EnumType<
-  | "NATURAL"
-  | "ID_ASC"
-  | "ID_DESC"
-  | "PARENT_ID_ASC"
-  | "PARENT_ID_DESC"
-  | "NAME_ASC"
-  | "NAME_DESC"
-  | "PARAMS_ASC"
-  | "PARAMS_DESC"
-  | "CONTEXT_ASC"
-  | "CONTEXT_DESC"
-  | "EXECUTE_AT_ASC"
-  | "EXECUTE_AT_DESC"
-  | "LOCKED_ASC"
-  | "LOCKED_DESC"
-  | "LAST_EXECUTED_ASC"
-  | "LAST_EXECUTED_DESC"
-  | "PRIMARY_KEY_ASC"
-  | "PRIMARY_KEY_DESC"
->;
-
-/**
- * @name TaskCondition
- * @type INPUT_OBJECT
- */
-export type TaskCondition = {
-  id?: number | null;
-  parentId?: number | null;
-  name?: string | null;
-  params?: { [K: string]: any } | null;
-  context?: { [K: string]: any } | null;
-  executeAt?: any | null;
-  locked?: boolean | null;
-  status?: string | null;
-};
-
-/**
  * @name Mutation
  * @type OBJECT
  */
@@ -1064,14 +939,6 @@ type t_Mutation = FieldsType<
     createExecution: FieldsTypeArg<
       { input: CreateExecutionInput },
       t_CreateExecutionPayload | null
-    >;
-
-    /**
-     * Creates a single `ExtendedTask`.
-     */
-    createExtendedTask: FieldsTypeArg<
-      { input: CreateExtendedTaskInput },
-      t_CreateExtendedTaskPayload | null
     >;
 
     /**
@@ -1173,8 +1040,10 @@ type t_Mutation = FieldsType<
     /**
      * Updates a single `Task` using a unique key and a patch.
      */
-    updateTaskByNameAndParamsAndContextAndExecuteAt: FieldsTypeArg<
-      { input: UpdateTaskByNameAndParamsAndContextAndExecuteAtInput },
+    updateTaskByNameAndParentIdAndParamsAndContextAndExecuteAt: FieldsTypeArg<
+      {
+        input: UpdateTaskByNameAndParentIdAndParamsAndContextAndExecuteAtInput;
+      },
       t_UpdateTaskPayload | null
     >;
 
@@ -1253,9 +1122,27 @@ type t_Mutation = FieldsType<
     /**
      * Deletes a single `Task` using a unique key.
      */
-    deleteTaskByNameAndParamsAndContextAndExecuteAt: FieldsTypeArg<
-      { input: DeleteTaskByNameAndParamsAndContextAndExecuteAtInput },
+    deleteTaskByNameAndParentIdAndParamsAndContextAndExecuteAt: FieldsTypeArg<
+      {
+        input: DeleteTaskByNameAndParentIdAndParamsAndContextAndExecuteAtInput;
+      },
       t_DeleteTaskPayload | null
+    >;
+    processNextTask: FieldsTypeArg<
+      { input: ProcessNextTaskInput },
+      t_ProcessNextTaskPayload | null
+    >;
+    updateAncestorTasksDescendantsStats: FieldsTypeArg<
+      { input: UpdateAncestorTasksDescendantsStatsInput },
+      t_UpdateAncestorTasksDescendantsStatsPayload | null
+    >;
+    updateExecutionStatus: FieldsTypeArg<
+      { input: UpdateExecutionStatusInput },
+      t_UpdateExecutionStatusPayload | null
+    >;
+    updateParentTaskChildrenStats: FieldsTypeArg<
+      { input: UpdateParentTaskChildrenStatsInput },
+      t_UpdateParentTaskChildrenStatsPayload | null
     >;
   },
   Extension<"Mutation">
@@ -1279,6 +1166,7 @@ export type ExecutionInput = {
   taskId: number;
   status?: string | null;
   startedAt?: any | null;
+  finishedAt?: any | null;
 };
 
 /**
@@ -1318,66 +1206,6 @@ type t_CreateExecutionPayload = FieldsType<
     >;
   },
   Extension<"CreateExecutionPayload">
->;
-
-/**
- * @name CreateExtendedTaskInput
- * @type INPUT_OBJECT
- */
-export type CreateExtendedTaskInput = {
-  clientMutationId?: string | null;
-  extendedTask: ExtendedTaskInput;
-};
-
-/**
- * @name ExtendedTaskInput
- * @type INPUT_OBJECT
- */
-export type ExtendedTaskInput = {
-  id?: number | null;
-  parentId?: number | null;
-  name?: string | null;
-  params?: { [K: string]: any } | null;
-  context?: { [K: string]: any } | null;
-  executeAt?: any | null;
-  locked?: boolean | null;
-  status?: string | null;
-  lastExecuted?: any | null;
-  attempts?: number | null;
-};
-
-/**
- * @name CreateExtendedTaskPayload
- * @type OBJECT
- */
-type t_CreateExtendedTaskPayload = FieldsType<
-  {
-    __typename: t_String<"CreateExtendedTaskPayload">;
-
-    /**
-     * The exact same `clientMutationId` that was provided in the mutation input, unchanged and unused. May be used by a client to track mutations.
-     */
-    clientMutationId?: t_String | null;
-
-    /**
-     * The `ExtendedTask` that was created by this mutation.
-     */
-    extendedTask?: t_ExtendedTask | null;
-
-    /**
-     * Our root query field type. Allows us to run any query from our mutation payload.
-     */
-    query?: t_Query | null;
-
-    /**
-     * An edge for our `ExtendedTask`. May be used by Relay 1.
-     */
-    extendedTaskEdge: FieldsTypeArg<
-      { orderBy?: ExtendedTasksOrderBy[] | null },
-      t_ExtendedTasksEdge | null
-    >;
-  },
-  Extension<"CreateExtendedTaskPayload">
 >;
 
 /**
@@ -1514,6 +1342,10 @@ export type TaskInput = {
   context?: { [K: string]: any } | null;
   executeAt?: any | null;
   locked?: boolean | null;
+  status: string;
+  attempts?: number | null;
+  childrenStats?: { [K: string]: any } | null;
+  descendantsStats?: { [K: string]: any } | null;
 };
 
 /**
@@ -1538,6 +1370,11 @@ type t_CreateTaskPayload = FieldsType<
      * Our root query field type. Allows us to run any query from our mutation payload.
      */
     query?: t_Query | null;
+
+    /**
+     * Reads a single `Task` that is related to this `Task`.
+     */
+    parent?: t_Task | null;
 
     /**
      * An edge for our `Task`. May be used by Relay 1.
@@ -1569,6 +1406,7 @@ export type ExecutionPatch = {
   taskId?: number | null;
   status?: string | null;
   startedAt?: any | null;
+  finishedAt?: any | null;
 };
 
 /**
@@ -1787,6 +1625,10 @@ export type TaskPatch = {
   context?: { [K: string]: any } | null;
   executeAt?: any | null;
   locked?: boolean | null;
+  status?: string | null;
+  attempts?: number | null;
+  childrenStats?: { [K: string]: any } | null;
+  descendantsStats?: { [K: string]: any } | null;
 };
 
 /**
@@ -1813,6 +1655,11 @@ type t_UpdateTaskPayload = FieldsType<
     query?: t_Query | null;
 
     /**
+     * Reads a single `Task` that is related to this `Task`.
+     */
+    parent?: t_Task | null;
+
+    /**
      * An edge for our `Task`. May be used by Relay 1.
      */
     taskEdge: FieldsTypeArg<
@@ -1834,13 +1681,14 @@ export type UpdateTaskInput = {
 };
 
 /**
- * @name UpdateTaskByNameAndParamsAndContextAndExecuteAtInput
+ * @name UpdateTaskByNameAndParentIdAndParamsAndContextAndExecuteAtInput
  * @type INPUT_OBJECT
  */
-export type UpdateTaskByNameAndParamsAndContextAndExecuteAtInput = {
+export type UpdateTaskByNameAndParentIdAndParamsAndContextAndExecuteAtInput = {
   clientMutationId?: string | null;
   patch: TaskPatch;
   name: string;
+  parentId: number;
   params: { [K: string]: any };
   context: { [K: string]: any };
   executeAt: any;
@@ -2055,6 +1903,11 @@ type t_DeleteTaskPayload = FieldsType<
     query?: t_Query | null;
 
     /**
+     * Reads a single `Task` that is related to this `Task`.
+     */
+    parent?: t_Task | null;
+
+    /**
      * An edge for our `Task`. May be used by Relay 1.
      */
     taskEdge: FieldsTypeArg<
@@ -2072,16 +1925,196 @@ type t_DeleteTaskPayload = FieldsType<
 export type DeleteTaskInput = { clientMutationId?: string | null; id: number };
 
 /**
- * @name DeleteTaskByNameAndParamsAndContextAndExecuteAtInput
+ * @name DeleteTaskByNameAndParentIdAndParamsAndContextAndExecuteAtInput
  * @type INPUT_OBJECT
  */
-export type DeleteTaskByNameAndParamsAndContextAndExecuteAtInput = {
+export type DeleteTaskByNameAndParentIdAndParamsAndContextAndExecuteAtInput = {
   clientMutationId?: string | null;
   name: string;
+  parentId: number;
   params: { [K: string]: any };
   context: { [K: string]: any };
   executeAt: any;
 };
+
+/**
+ * @name ProcessNextTaskInput
+ * @type INPUT_OBJECT
+ */
+export type ProcessNextTaskInput = {
+  clientMutationId?: string | null;
+  backoffDecay?: string | null;
+  backoffDelay?: IntervalInput | null;
+  concurrentExecutions?: number | null;
+  maxAttempts?: number | null;
+};
+
+/**
+ * @name IntervalInput
+ * @type INPUT_OBJECT
+ */
+export type IntervalInput = {
+  seconds?: number | null;
+  minutes?: number | null;
+  hours?: number | null;
+  days?: number | null;
+  months?: number | null;
+  years?: number | null;
+};
+
+/**
+ * @name Float
+ * @type SCALAR
+ */
+type t_Float<T extends number = number> = ScalarType<T, Extension<"Float">>;
+
+/**
+ * @name ProcessNextTaskPayload
+ * @type OBJECT
+ */
+type t_ProcessNextTaskPayload = FieldsType<
+  {
+    __typename: t_String<"ProcessNextTaskPayload">;
+
+    /**
+     * The exact same `clientMutationId` that was provided in the mutation input, unchanged and unused. May be used by a client to track mutations.
+     */
+    clientMutationId?: t_String | null;
+    results?: (t_ProcessNextTaskRecord | null)[] | null;
+
+    /**
+     * Our root query field type. Allows us to run any query from our mutation payload.
+     */
+    query?: t_Query | null;
+  },
+  Extension<"ProcessNextTaskPayload">
+>;
+
+/**
+ * @name ProcessNextTaskRecord
+ * @type OBJECT
+ */
+type t_ProcessNextTaskRecord = FieldsType<
+  {
+    __typename: t_String<"ProcessNextTaskRecord">;
+    executionId?: t_Int | null;
+    taskName?: t_String | null;
+  },
+  Extension<"ProcessNextTaskRecord">
+>;
+
+/**
+ * @name UpdateAncestorTasksDescendantsStatsInput
+ * @type INPUT_OBJECT
+ */
+export type UpdateAncestorTasksDescendantsStatsInput = {
+  clientMutationId?: string | null;
+  parentTaskId?: number | null;
+  newStatus?: string | null;
+  oldStatus?: string | null;
+  locked?: boolean | null;
+};
+
+/**
+ * @name UpdateAncestorTasksDescendantsStatsPayload
+ * @type OBJECT
+ */
+type t_UpdateAncestorTasksDescendantsStatsPayload = FieldsType<
+  {
+    __typename: t_String<"UpdateAncestorTasksDescendantsStatsPayload">;
+
+    /**
+     * The exact same `clientMutationId` that was provided in the mutation input, unchanged and unused. May be used by a client to track mutations.
+     */
+    clientMutationId?: t_String | null;
+
+    /**
+     * Our root query field type. Allows us to run any query from our mutation payload.
+     */
+    query?: t_Query | null;
+  },
+  Extension<"UpdateAncestorTasksDescendantsStatsPayload">
+>;
+
+/**
+ * @name UpdateExecutionStatusInput
+ * @type INPUT_OBJECT
+ */
+export type UpdateExecutionStatusInput = {
+  clientMutationId?: string | null;
+  newStatus?: string | null;
+  executionId?: number | null;
+  taskId?: number | null;
+  maxAttempts?: number | null;
+};
+
+/**
+ * @name UpdateExecutionStatusPayload
+ * @type OBJECT
+ */
+type t_UpdateExecutionStatusPayload = FieldsType<
+  {
+    __typename: t_String<"UpdateExecutionStatusPayload">;
+
+    /**
+     * The exact same `clientMutationId` that was provided in the mutation input, unchanged and unused. May be used by a client to track mutations.
+     */
+    clientMutationId?: t_String | null;
+    execution?: t_Execution | null;
+
+    /**
+     * Our root query field type. Allows us to run any query from our mutation payload.
+     */
+    query?: t_Query | null;
+
+    /**
+     * Reads a single `Task` that is related to this `Execution`.
+     */
+    task?: t_Task | null;
+
+    /**
+     * An edge for our `Execution`. May be used by Relay 1.
+     */
+    executionEdge: FieldsTypeArg<
+      { orderBy?: ExecutionsOrderBy[] | null },
+      t_ExecutionsEdge | null
+    >;
+  },
+  Extension<"UpdateExecutionStatusPayload">
+>;
+
+/**
+ * @name UpdateParentTaskChildrenStatsInput
+ * @type INPUT_OBJECT
+ */
+export type UpdateParentTaskChildrenStatsInput = {
+  clientMutationId?: string | null;
+  parentTaskId?: number | null;
+  newStatus?: string | null;
+  oldStatus?: string | null;
+  locked?: boolean | null;
+};
+
+/**
+ * @name UpdateParentTaskChildrenStatsPayload
+ * @type OBJECT
+ */
+type t_UpdateParentTaskChildrenStatsPayload = FieldsType<
+  {
+    __typename: t_String<"UpdateParentTaskChildrenStatsPayload">;
+
+    /**
+     * The exact same `clientMutationId` that was provided in the mutation input, unchanged and unused. May be used by a client to track mutations.
+     */
+    clientMutationId?: t_String | null;
+
+    /**
+     * Our root query field type. Allows us to run any query from our mutation payload.
+     */
+    query?: t_Query | null;
+  },
+  Extension<"UpdateParentTaskChildrenStatsPayload">
+>;
 
 /**
  * @name __Schema
@@ -2297,8 +2330,10 @@ export enum ExecutionsOrderBy {
   STATUS_DESC = "STATUS_DESC",
   STARTED_AT_ASC = "STARTED_AT_ASC",
   STARTED_AT_DESC = "STARTED_AT_DESC",
+  FINISHED_AT_ASC = "FINISHED_AT_ASC",
+  FINISHED_AT_DESC = "FINISHED_AT_DESC",
   PRIMARY_KEY_ASC = "PRIMARY_KEY_ASC",
-  PRIMARY_KEY_DESC = "PRIMARY_KEY_DESC"
+  PRIMARY_KEY_DESC = "PRIMARY_KEY_DESC",
 }
 
 /**
@@ -2346,6 +2381,40 @@ export type JSON = TypeData<t_JSON>;
 export type Boolean = TypeData<t_Boolean>;
 
 /**
+ * @name TasksOrderBy
+ * @type ENUM
+ */
+export enum TasksOrderBy {
+  NATURAL = "NATURAL",
+  ID_ASC = "ID_ASC",
+  ID_DESC = "ID_DESC",
+  PARENT_ID_ASC = "PARENT_ID_ASC",
+  PARENT_ID_DESC = "PARENT_ID_DESC",
+  NAME_ASC = "NAME_ASC",
+  NAME_DESC = "NAME_DESC",
+  PARAMS_ASC = "PARAMS_ASC",
+  PARAMS_DESC = "PARAMS_DESC",
+  CONTEXT_ASC = "CONTEXT_ASC",
+  CONTEXT_DESC = "CONTEXT_DESC",
+  EXECUTE_AT_ASC = "EXECUTE_AT_ASC",
+  EXECUTE_AT_DESC = "EXECUTE_AT_DESC",
+  LOCKED_ASC = "LOCKED_ASC",
+  LOCKED_DESC = "LOCKED_DESC",
+  STATUS_ASC = "STATUS_ASC",
+  STATUS_DESC = "STATUS_DESC",
+  ATTEMPTS_ASC = "ATTEMPTS_ASC",
+  ATTEMPTS_DESC = "ATTEMPTS_DESC",
+  CHILDREN_STATS_ASC = "CHILDREN_STATS_ASC",
+  CHILDREN_STATS_DESC = "CHILDREN_STATS_DESC",
+  DESCENDANTS_STATS_ASC = "DESCENDANTS_STATS_ASC",
+  DESCENDANTS_STATS_DESC = "DESCENDANTS_STATS_DESC",
+  LAST_EXECUTED_ASC = "LAST_EXECUTED_ASC",
+  LAST_EXECUTED_DESC = "LAST_EXECUTED_DESC",
+  PRIMARY_KEY_ASC = "PRIMARY_KEY_ASC",
+  PRIMARY_KEY_DESC = "PRIMARY_KEY_DESC",
+}
+
+/**
  * @name TasksConnection
  * @type OBJECT
  */
@@ -2364,18 +2433,6 @@ export type TasksEdge = TypeData<t_TasksEdge>;
 export type PageInfo = TypeData<t_PageInfo>;
 
 /**
- * @name Count
- * @type OBJECT
- */
-export type Count = TypeData<t_Count>;
-
-/**
- * @name BigInt
- * @type SCALAR
- */
-export type BigInt = TypeData<t_BigInt>;
-
-/**
  * @name LogsOrderBy
  * @type ENUM
  */
@@ -2390,7 +2447,7 @@ export enum LogsOrderBy {
   MESSAGE_ASC = "MESSAGE_ASC",
   MESSAGE_DESC = "MESSAGE_DESC",
   PRIMARY_KEY_ASC = "PRIMARY_KEY_ASC",
-  PRIMARY_KEY_DESC = "PRIMARY_KEY_DESC"
+  PRIMARY_KEY_DESC = "PRIMARY_KEY_DESC",
 }
 
 /**
@@ -2419,52 +2476,6 @@ export type LogsEdge = TypeData<t_LogsEdge>;
 export type ExecutionsEdge = TypeData<t_ExecutionsEdge>;
 
 /**
- * @name ExtendedTasksOrderBy
- * @type ENUM
- */
-export enum ExtendedTasksOrderBy {
-  NATURAL = "NATURAL",
-  ID_ASC = "ID_ASC",
-  ID_DESC = "ID_DESC",
-  PARENT_ID_ASC = "PARENT_ID_ASC",
-  PARENT_ID_DESC = "PARENT_ID_DESC",
-  NAME_ASC = "NAME_ASC",
-  NAME_DESC = "NAME_DESC",
-  PARAMS_ASC = "PARAMS_ASC",
-  PARAMS_DESC = "PARAMS_DESC",
-  CONTEXT_ASC = "CONTEXT_ASC",
-  CONTEXT_DESC = "CONTEXT_DESC",
-  EXECUTE_AT_ASC = "EXECUTE_AT_ASC",
-  EXECUTE_AT_DESC = "EXECUTE_AT_DESC",
-  LOCKED_ASC = "LOCKED_ASC",
-  LOCKED_DESC = "LOCKED_DESC",
-  STATUS_ASC = "STATUS_ASC",
-  STATUS_DESC = "STATUS_DESC",
-  LAST_EXECUTED_ASC = "LAST_EXECUTED_ASC",
-  LAST_EXECUTED_DESC = "LAST_EXECUTED_DESC",
-  ATTEMPTS_ASC = "ATTEMPTS_ASC",
-  ATTEMPTS_DESC = "ATTEMPTS_DESC"
-}
-
-/**
- * @name ExtendedTasksConnection
- * @type OBJECT
- */
-export type ExtendedTasksConnection = TypeData<t_ExtendedTasksConnection>;
-
-/**
- * @name ExtendedTask
- * @type OBJECT
- */
-export type ExtendedTask = TypeData<t_ExtendedTask>;
-
-/**
- * @name ExtendedTasksEdge
- * @type OBJECT
- */
-export type ExtendedTasksEdge = TypeData<t_ExtendedTasksEdge>;
-
-/**
  * @name MigrationsOrderBy
  * @type ENUM
  */
@@ -2479,7 +2490,7 @@ export enum MigrationsOrderBy {
   EXECUTED_AT_ASC = "EXECUTED_AT_ASC",
   EXECUTED_AT_DESC = "EXECUTED_AT_DESC",
   PRIMARY_KEY_ASC = "PRIMARY_KEY_ASC",
-  PRIMARY_KEY_DESC = "PRIMARY_KEY_DESC"
+  PRIMARY_KEY_DESC = "PRIMARY_KEY_DESC",
 }
 
 /**
@@ -2502,32 +2513,6 @@ export type Migration = TypeData<t_Migration>;
 export type MigrationsEdge = TypeData<t_MigrationsEdge>;
 
 /**
- * @name TasksOrderBy
- * @type ENUM
- */
-export enum TasksOrderBy {
-  NATURAL = "NATURAL",
-  ID_ASC = "ID_ASC",
-  ID_DESC = "ID_DESC",
-  PARENT_ID_ASC = "PARENT_ID_ASC",
-  PARENT_ID_DESC = "PARENT_ID_DESC",
-  NAME_ASC = "NAME_ASC",
-  NAME_DESC = "NAME_DESC",
-  PARAMS_ASC = "PARAMS_ASC",
-  PARAMS_DESC = "PARAMS_DESC",
-  CONTEXT_ASC = "CONTEXT_ASC",
-  CONTEXT_DESC = "CONTEXT_DESC",
-  EXECUTE_AT_ASC = "EXECUTE_AT_ASC",
-  EXECUTE_AT_DESC = "EXECUTE_AT_DESC",
-  LOCKED_ASC = "LOCKED_ASC",
-  LOCKED_DESC = "LOCKED_DESC",
-  LAST_EXECUTED_ASC = "LAST_EXECUTED_ASC",
-  LAST_EXECUTED_DESC = "LAST_EXECUTED_DESC",
-  PRIMARY_KEY_ASC = "PRIMARY_KEY_ASC",
-  PRIMARY_KEY_DESC = "PRIMARY_KEY_DESC"
-}
-
-/**
  * @name Mutation
  * @type OBJECT
  */
@@ -2538,12 +2523,6 @@ export type Mutation = TypeData<t_Mutation>;
  * @type OBJECT
  */
 export type CreateExecutionPayload = TypeData<t_CreateExecutionPayload>;
-
-/**
- * @name CreateExtendedTaskPayload
- * @type OBJECT
- */
-export type CreateExtendedTaskPayload = TypeData<t_CreateExtendedTaskPayload>;
 
 /**
  * @name CreateLogPayload
@@ -2612,6 +2591,48 @@ export type DeleteMigrationPayload = TypeData<t_DeleteMigrationPayload>;
 export type DeleteTaskPayload = TypeData<t_DeleteTaskPayload>;
 
 /**
+ * @name Float
+ * @type SCALAR
+ */
+export type Float = TypeData<t_Float>;
+
+/**
+ * @name ProcessNextTaskPayload
+ * @type OBJECT
+ */
+export type ProcessNextTaskPayload = TypeData<t_ProcessNextTaskPayload>;
+
+/**
+ * @name ProcessNextTaskRecord
+ * @type OBJECT
+ */
+export type ProcessNextTaskRecord = TypeData<t_ProcessNextTaskRecord>;
+
+/**
+ * @name UpdateAncestorTasksDescendantsStatsPayload
+ * @type OBJECT
+ */
+export type UpdateAncestorTasksDescendantsStatsPayload = TypeData<
+  t_UpdateAncestorTasksDescendantsStatsPayload
+>;
+
+/**
+ * @name UpdateExecutionStatusPayload
+ * @type OBJECT
+ */
+export type UpdateExecutionStatusPayload = TypeData<
+  t_UpdateExecutionStatusPayload
+>;
+
+/**
+ * @name UpdateParentTaskChildrenStatsPayload
+ * @type OBJECT
+ */
+export type UpdateParentTaskChildrenStatsPayload = TypeData<
+  t_UpdateParentTaskChildrenStatsPayload
+>;
+
+/**
  * @name __Schema
  * @type OBJECT
  */
@@ -2635,7 +2656,7 @@ export enum __TypeKind {
   ENUM = "ENUM",
   INPUT_OBJECT = "INPUT_OBJECT",
   LIST = "LIST",
-  NON_NULL = "NON_NULL"
+  NON_NULL = "NON_NULL",
 }
 
 /**
@@ -2685,5 +2706,5 @@ export enum __DirectiveLocation {
   ENUM = "ENUM",
   ENUM_VALUE = "ENUM_VALUE",
   INPUT_OBJECT = "INPUT_OBJECT",
-  INPUT_FIELD_DEFINITION = "INPUT_FIELD_DEFINITION"
+  INPUT_FIELD_DEFINITION = "INPUT_FIELD_DEFINITION",
 }
