@@ -43,6 +43,9 @@ create index on logs (execution_id, time);
 
 create function on_before_task_insert() returns trigger as $$
 begin
+	if new.id = new.parent_id then
+		raise exception 'A task cannot reference itself as its parent';
+	end if;
 	if new.execute_at > now() then
 		new.status = 'scheduled';
 	else
