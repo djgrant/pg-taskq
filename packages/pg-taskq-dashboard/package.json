@@ -1,6 +1,6 @@
 {
   "name": "pg-taskq-dashboard",
-  "version": "1.0.0-alpha.4",
+  "version": "1.0.0-alpha.10",
   "description": "Dashboard for pg-taskq",
   "author": "Daniel Grant <hello@danielgrant.co>",
   "files": [
