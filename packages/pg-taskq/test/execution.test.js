@@ -3,16 +3,16 @@ const { PgTaskQ } = require("pg-taskq");
 
 let taskq;
 
-beforeAll(async () => {
-  taskq = await setup({ schema: "execution_test", timeout: "0.1s" });
-  taskq.start();
-});
-
-afterAll(async () => {
-  await taskq.stop();
-});
-
 describe("Callback form", () => {
+  beforeAll(async () => {
+    taskq = await setup({ schema: "execution_test", timeout: "0.1s" });
+    taskq.start();
+  });
+
+  afterAll(async () => {
+    await taskq.stop();
+  });
+
   test("An enqueued task is executed", (done) => {
     taskq.enqueue("Test execution");
     taskq.take("Test execution", () => done());
@@ -97,6 +97,17 @@ describe("Callback form", () => {
 });
 
 describe("Chained methods", () => {
+  let taskq;
+
+  beforeAll(async () => {
+    taskq = await setup({ schema: "execution_test", timeout: "0.1s" });
+    taskq.start();
+  });
+
+  afterAll(async () => {
+    await taskq.stop();
+  });
+
   test("onExecute", (done) => {
     taskq.enqueue("Test onExecute");
     taskq.take("Test onExecute").onExecute(() => done());

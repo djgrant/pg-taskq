@@ -13,7 +13,7 @@
   ],
   "scripts": {
     "test": "jest",
-    "prepublishOnly": "npm t"
+    "prepublishOnly": "jest --runInBand"
   },
   "dependencies": {
     "@djgrant/postgres-migrations": "^4.1.0-rc.1",

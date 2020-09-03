@@ -431,10 +431,10 @@ class PgTaskQ {
   }
 
   async setUpEventListeners() {
-    const client = (this.notificationClient = await this.pool.connect());
-    await client.query(queries.listen());
+    this.notificationClient = await this.pool.connect();
+    await this.notificationClient.query(queries.listen());
 
-    client.on("notification", ({ channel, payload }) => {
+    this.notificationClient.on("notification", ({ channel, payload }) => {
       if (channel != "taskq") return;
       try {
         const message = JSON.parse(payload);
@@ -490,9 +490,10 @@ class PgTaskQ {
   async stop() {
     if (this.started) {
       this.started = false;
-      await this.processingPromise.catch();
-      this.notificationClient.end();
-      this.pool.end();
+      await this.processingPromise.catch(console.log);
+      await this.notificationClient.release();
+      await this.pool.end();
+      this.log("info", "Stopped TaskQ");
     } else {
       this.log("info", "Can't stop TaskQ. Not currently running.");
     }

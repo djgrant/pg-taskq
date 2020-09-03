@@ -1,20 +1,18 @@
-const { client, connectionString, exec } = require("./utils");
+const { getPool, connectionString, exec } = require("./utils");
 
-beforeAll(() => {
-  client.connect();
-});
+const pool = getPool();
 
-afterAll(() => {
-  client.end();
+afterAll(async () => {
+  await pool.end();
 });
 
 it("Runs migrations", async () => {
   await exec(`./bin/up.js -f -c ${connectionString}`).catch(console.log);
-  const result = await client.query(`
-    SELECT table_name FROM information_schema.tables 
-    WHERE table_schema = 'public'
-    ORDER BY table_name
-  `);
+  const result = await pool.query(`
+      SELECT table_name FROM information_schema.tables 
+      WHERE table_schema = 'public'
+      ORDER BY table_name
+    `);
   expect(result.rows.map((table) => table.table_name)).toEqual([
     "executions",
     "logs",
@@ -24,14 +22,12 @@ it("Runs migrations", async () => {
 });
 
 it("Clears the tasks queue", async () => {
-  await client.query(`
-    INSERT INTO tasks ("name") VALUES ('Test Task');
-    INSERT INTO executions ("task_id") VALUES (1);
-  `);
+  await pool.query(`
+      INSERT INTO tasks ("name") VALUES ('Test Task');
+      INSERT INTO executions ("task_id") VALUES (1);
+    `);
   await exec(`./bin/clear.js -f -c ${connectionString}`).catch(console.log);
-  const result = await client.query(
-    `SELECT t.*, e.* FROM tasks t, executions e`
-  );
+  const result = await pool.query(`SELECT t.*, e.* FROM tasks t, executions e`);
   expect(result.rowCount).toEqual(0);
 });
 
@@ -39,11 +35,11 @@ it("Runs migrations in a provided schema", async () => {
   await exec(`./bin/up.js -f -c ${connectionString} -s schema_test`).catch(
     console.log
   );
-  const result = await client.query(`
-    SELECT table_name FROM information_schema.tables 
-    WHERE table_schema = 'schema_test'
-    ORDER BY table_name
-  `);
+  const result = await pool.query(`
+      SELECT table_name FROM information_schema.tables 
+      WHERE table_schema = 'schema_test'
+      ORDER BY table_name
+    `);
   expect(result.rows.map((table) => table.table_name)).toEqual([
     "executions",
     "logs",
@@ -53,16 +49,14 @@ it("Runs migrations in a provided schema", async () => {
 });
 
 it("Clears the tasks queue from a provided schema", async () => {
-  await client.query("set search_path to schema_test");
-  await client.query(`
-    INSERT INTO tasks ("name") VALUES ('Test Task');
-    INSERT INTO executions ("task_id") VALUES (1);
-  `);
+  await pool.query("set search_path to schema_test");
+  await pool.query(`
+      INSERT INTO tasks ("name") VALUES ('Test Task');
+      INSERT INTO executions ("task_id") VALUES (1);
+    `);
   await exec(`./bin/clear.js -f -c ${connectionString} -s schema_test`).catch(
     console.log
   );
-  const result = await client.query(
-    `SELECT t.*, e.* FROM tasks t, executions e`
-  );
+  const result = await pool.query(`SELECT t.*, e.* FROM tasks t, executions e`);
   expect(result.rowCount).toEqual(0);
 });

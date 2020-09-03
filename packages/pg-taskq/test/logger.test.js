@@ -1,4 +1,4 @@
-const { client, setup } = require("./utils");
+const { setup } = require("./utils");
 const sql = require("sql-template-strings");
 
 let taskq;
@@ -48,7 +48,7 @@ it("logs errors passed explicitly to logger", (done) => {
   });
 });
 
-it.only("logs error throw within a task execution", (done) => {
+it("logs error throw within a task execution", (done) => {
   taskq.enqueue("Error Task");
   taskq
     .take("Error Task", () => {

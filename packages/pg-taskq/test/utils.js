@@ -6,7 +6,7 @@ const { PgTaskQ } = require("pg-taskq");
 const exec = util.promisify(cp.exec);
 
 const connectionString = process.env.DATABASE_URL;
-const client = new pg.Client({ connectionString });
+const getPool = () => new pg.Pool({ connectionString });
 
 const migrate = (schema) =>
   exec(`./bin/taskq.sh up -f -c ${connectionString} -s ${schema}`);
@@ -27,7 +27,7 @@ const pause = async (interval) =>
   new Promise((resolve) => setTimeout(resolve, interval));
 
 module.exports = {
-  client,
+  getPool,
   connectionString,
   exec,
   migrate,

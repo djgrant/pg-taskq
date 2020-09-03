@@ -1,7 +1,6 @@
 const { setup } = require("./utils");
 
 let taskq;
-
 const logger = jest.fn();
 
 beforeAll(async () => {

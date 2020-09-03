@@ -1,4 +1,4 @@
-const { setup, pause } = require("./utils");
+const { setup } = require("./utils");
 
 let taskq;
 
