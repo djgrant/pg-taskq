@@ -434,6 +434,7 @@ create trigger task_event_3_locked
 create trigger task_event_4_completed
 	after update on tasks
 	for each row when (
+		new.locked = true and
 		(old.descendants_stats ->> 'locked')::numeric != (old.descendants_stats ->> 'total')::numeric and
 		(new.descendants_stats ->> 'locked')::numeric = (new.descendants_stats ->> 'total')::numeric
 	)
