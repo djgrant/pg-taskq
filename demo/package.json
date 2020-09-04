@@ -1,7 +1,7 @@
 {
   "private": "true",
   "name": "demo",
-  "version": "1.0.0-alpha.11",
+  "version": "1.0.0-alpha.12",
   "scripts": {
     "start": "run-p server worker dashboard -l",
     "dashboard": "node dashboard",
@@ -11,7 +11,7 @@
   "dependencies": {
     "express": "^4.17.1",
     "npm-run-all": "^4.1.5",
-    "pg-taskq": "^1.0.0-alpha.11",
+    "pg-taskq": "^1.0.0-alpha.12",
     "pg-taskq-dashboard": "^1.0.0-alpha.10",
     "pg-taskq-graphql": "^1.0.0-alpha.6",
     "pg-taskq-server": "^1.0.0-alpha.11"
