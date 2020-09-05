@@ -404,9 +404,9 @@ begin
 		task = new;
 	end if;
 
-	-- if event_type = 'complete' and task.locked = false then
-	-- 	return new;
-	-- end if;
+	if event_type = 'complete' and task.locked = false then
+		return new;
+	end if;
 
 	execution = tasks_latest_execution(task);
 	execution_jsonb = jsonb_set(
@@ -446,7 +446,8 @@ create trigger task_event_4_completed
 	for each row when (
 		new.collection = 'descendants' and
 		old.locked != old.total and
-		new.locked = new.total
+		new.locked = new.total and
+		new.locked > 0
 	)
 	execute procedure dispatch_task_event('complete'); 
 
