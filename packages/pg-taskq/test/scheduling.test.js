@@ -1,6 +1,6 @@
 const df = require("date-fns/fp");
 const { compose } = require("lodash/fp");
-const { setup } = require("./utils");
+const { setup, pause } = require("./utils");
 
 let taskq;
 
@@ -70,4 +70,30 @@ test("executeTodayAt", async () => {
   )(df.startOfDay(new Date()));
 
   expect(execute_at).toMatchDate(expectedDate);
+});
+
+test("skipping already scheduled unique tasks", async () => {
+  const executionMock = jest.fn();
+  const now = new Date();
+
+  await taskq.schedule({
+    name: "Unique task",
+    executeAtDateTime: now,
+    params: {},
+    context: { a: 1 },
+  });
+
+  await taskq.schedule({
+    name: "Unique task",
+    executeAtDateTime: now,
+    params: {},
+    context: { a: 1 },
+  });
+
+  taskq.take("Unique task", executionMock);
+
+  await pause(250);
+  await taskq.processingPromise;
+
+  expect(executionMock).toBeCalledTimes(1);
 });

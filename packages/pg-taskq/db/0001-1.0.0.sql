@@ -2,13 +2,13 @@ create table tasks (
 	id serial primary key,
 	parent_id integer references tasks(id) on delete cascade,
 	name text not null,
-	params jsonb,
-	context jsonb,
+	params jsonb not null default '{}'::jsonb,
+	context jsonb not null default '{}'::jsonb,
 	execute_at timestamptz not null default now(),
 	locked boolean default false not null,
 	status varchar not null,
 	attempts integer default 0 not null,
-	constraint tasks_unique_key unique (name, parent_id, params, context, execute_at)
+	constraint tasks_unique_key unique (name, params, context, execute_at)
 );
 
 create table task_stats (
