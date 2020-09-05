@@ -1,9 +1,15 @@
 const { setup } = require("./utils");
 
+jest.setTimeout(15000);
+
 let taskq;
 
 beforeAll(async () => {
-  taskq = await setup({ schema: "execution_test", timeout: "0.1s" });
+  taskq = await setup({
+    schema: "stats_test",
+    timeout: "0.1s",
+    maxAttempts: 2,
+  });
   taskq.start();
 });
 
@@ -16,46 +22,53 @@ it("caclulates children stats", (done) => {
 
   taskq
     .take("Outer task")
-    .onExecute(async ({ taskq }) => {
-      await taskq.enqueue("Inner task");
-      await taskq.enqueue("Inner task 2");
+    .onFirstAttempt(async ({ taskq }) => {
+      let i = 10;
+      while (i--) {
+        await taskq.enqueue("Inner task", { i });
+      }
     })
-    .onSuccess(({ task }) => {
-      expect(task).toMatchObject({
-        children_stats: {
-          total: 2,
-          pending: 2,
-          locked: 0,
-        },
-      });
-    })
-    .onComplete(({ task }) => {
-      expect(task).toMatchObject({
-        children_stats: {
-          total: 2,
-          success: 1,
-          failure: 1,
-          locked: 2,
-        },
+    .onExecute(() => {})
+    .onComplete(async ({ getStats }) => {
+      const { children } = await getStats();
+      expect(children).toMatchObject({
+        total: 10,
+        locked: 10,
+        failure: 5,
+        success: 5,
+        pending: 0,
       });
       done();
     });
 
-  taskq.take("Inner task", () => {});
-  taskq.take("Inner task 2", () => {
-    throw new Error();
+  taskq.take("Inner task", ({ params }) => {
+    if (params.i % 2 === 0) {
+      throw new Error();
+    }
   });
 });
 
 it("calculates descendant stats", (done) => {
   taskq.enqueue("Depth 1");
 
+  taskq.on("timeout", ({ task, execution }) => {
+    console.log(task.id, task.name, task.status, execution);
+  });
+
   taskq.take("Depth 2", async ({ taskq }) => {
-    await taskq.enqueue("Depth 3");
+    let i = 5;
+    while (i--) {
+      taskq.enqueue("Depth 3", { i });
+    }
   });
-  taskq.take("Depth 3", async ({ taskq }) => {
-    await taskq.enqueue("Depth 4");
+
+  taskq.take("Depth 3", async ({ taskq, params }) => {
+    let i = 5;
+    while (i--) {
+      taskq.enqueue("Depth 4", { i, j: params.i });
+    }
   });
+
   taskq.take("Depth 4", () => {
     throw new Error();
   });
@@ -65,8 +78,9 @@ it("calculates descendant stats", (done) => {
     .onExecute(async ({ taskq }) => {
       await taskq.enqueue("Depth 2");
     })
-    .onComplete(({ task }) => {
-      expect(task.children_stats).toEqual({
+    .onComplete(async ({ getStats }) => {
+      const { children, descendants } = await getStats();
+      expect(children).toEqual({
         total: 1,
         locked: 1,
         success: 1,
@@ -76,11 +90,11 @@ it("calculates descendant stats", (done) => {
         timeout: 0,
         scheduled: 0,
       });
-      expect(task.descendants_stats).toEqual({
-        total: 3,
-        locked: 3,
-        success: 2,
-        failure: 1,
+      expect(descendants).toEqual({
+        total: 31,
+        locked: 31,
+        success: 6,
+        failure: 25,
         pending: 0,
         running: 0,
         timeout: 0,

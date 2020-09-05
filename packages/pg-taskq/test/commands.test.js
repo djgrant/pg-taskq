@@ -17,6 +17,7 @@ it("Runs migrations", async () => {
     "executions",
     "logs",
     "migrations",
+    "task_stats",
     "tasks",
   ]);
 });
@@ -44,6 +45,7 @@ it("Runs migrations in a provided schema", async () => {
     "executions",
     "logs",
     "migrations",
+    "task_stats",
     "tasks",
   ]);
 });

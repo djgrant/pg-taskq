@@ -8,9 +8,21 @@ create table tasks (
 	locked boolean default false not null,
 	status varchar not null,
 	attempts integer default 0 not null,
-	children_stats jsonb default null,
-	descendants_stats jsonb default null,
 	constraint tasks_unique_key unique (name, parent_id, params, context, execute_at)
+);
+
+create table task_stats (
+	task_id integer references tasks(id) on delete cascade,
+	collection varchar not null,
+	scheduled integer default 0,
+	pending integer default 0,
+	running integer default 0,
+	failure integer default 0,
+	timeout integer default 0,
+	success integer default 0,
+	locked integer default 0,
+	total integer default 0,
+	constraint task_stats_unique_key unique (task_id, collection)
 );
 
 create table executions (
@@ -36,6 +48,7 @@ create index on tasks (id, parent_id);
 create index on tasks (execute_at desc);
 create index on tasks (execute_at asc);
 create index on tasks (status);
+create index on task_stats (task_id, collection);
 create index on logs (execution_id, time);
 
 
@@ -102,101 +115,59 @@ create trigger execution_updated
 
 create function on_task_change () returns trigger as $$ 
 declare
-	old_status varchar; -- pg version < 12 cannot read old.status
-	locked boolean;
-begin 
-	case 
-		when TG_ARGV[0] = 'locked' then
-			locked = true;
-		when TG_ARGV[0] = 'unlocked' then
-			locked = false;
-		else
-			locked = null;
-	end case;
-	
-	case
-		when TG_OP = 'INSERT' then
-			old_status = null;
-		when TG_OP = 'UPDATE' then
-			old_status = old.status;
-	end case;
+	old_row tasks;
+begin
+	if TG_OP = 'INSERT' then
+		insert into task_stats (task_id, collection) values (new.id, 'children');
+		insert into task_stats (task_id, collection) values (new.id, 'descendants');
+		old_row = null;
+	else
+		old_row = old;
+	end if;
 
-	perform update_parent_task_children_stats(new.parent_id, new.status, old_status, locked);
- 	perform update_ancestor_tasks_descendants_stats(new.parent_id, new.status, old_status, locked);
-
+	perform update_stats(TG_OP, TG_ARGV[0], old_row, new, 'children', false);
+	perform update_stats(TG_OP, TG_ARGV[0], old_row, new, 'descendants', true);
 	return new;
 end
 $$ language plpgsql volatile;
 
 
-create function update_parent_task_children_stats (
-	parent_task_id integer, 
-	new_status varchar, 
-	old_status varchar,
-	locked boolean
+create function update_stats (
+	op varchar, 
+	arg varchar, 
+	old tasks,
+	new tasks,
+	collection varchar,
+	recurse boolean
 ) 
 returns void as $$
-declare
-	parent_task tasks;
-	children_stats_updated jsonb;
 begin
-	select * into parent_task 
-	from tasks 
-	where id = parent_task_id;
-
-	if (parent_task.id is not null) then
-		children_stats_updated = update_stats(
-			parent_task.children_stats, 
-			new_status, 
-			old_status,
-			locked
-		);
-
-		update tasks 
-		set children_stats = children_stats_updated 
-		where id = parent_task.id;
+	if op = 'INSERT' then
+		perform inc_task_stat(new.parent_id, collection, 'total', 1);
 	end if;
-end
-$$ language plpgsql volatile;
-
-
-create function update_ancestor_tasks_descendants_stats (
-	parent_task_id integer, 
-	new_status varchar, 
-	old_status varchar,
-	locked boolean
-) 
-returns void as $$
-declare
-	parent_task tasks;
-	descendants_stats_updated jsonb;
-begin
-	select * into parent_task 
-	from tasks 
-	where id = parent_task_id;
 	
-	if (parent_task.id is not null) then
-		descendants_stats_updated = update_stats(
-			parent_task.descendants_stats, 
-			new_status, 
-			old_status,
-			locked
-		);
-		
-		update tasks 
-		set descendants_stats = descendants_stats_updated
-		where id = parent_task.id;
-		
-		-- recurse to next level up
-		perform update_ancestor_tasks_descendants_stats(
-			parent_task.parent_id, 
-			new_status, 
-			old_status,
-			locked
-		);
+	if old is not null and old.status is not null then
+		perform inc_task_stat(new.parent_id, collection, old.status, -1);
+	end if;	
+	
+	if new.status is not null then
+		perform inc_task_stat(new.parent_id, collection, new.status, 1);
+	end if;
+
+	if arg = 'locked' then
+		perform inc_task_stat(new.parent_id, collection, 'locked', 1);
+	end if;
+
+	if arg = 'unlocked' then
+		perform inc_task_stat(new.parent_id, collection, 'locked', -1);
+	end if;
+
+	if recurse = true and new.parent_id is not null then
+		select parent_id into new.parent_id from tasks where id = new.parent_id;
+		perform update_stats(op, arg, old, new, collection, true);
 	end if;
 end
-$$ language plpgsql volatile;
+$$ language plpgsql;
 
 
 create trigger task_inserted 
@@ -217,6 +188,7 @@ create trigger task_unlocked
 	after update on tasks
 	for each row when (old.locked = true and new.locked = false)
 	execute procedure on_task_change('unlocked');
+
 
 -- search functions --
 
@@ -277,7 +249,7 @@ create function root_children_stats() returns jsonb as $$
 $$ language sql stable;
 
 
--- table functions --
+-- window functions --
 
 create function tasks_last_executed(t tasks) returns timestamptz as $$
 	select e.started_at
@@ -304,13 +276,27 @@ end
 $$ language plpgsql stable;
 
 
+create function tasks_children_stats(t tasks) returns jsonb as $$
+	select to_jsonb(task_stats) - 'collection' - 'task_id' from task_stats 
+	where collection = 'children' and task_id = t.id;
+$$ 
+language sql stable;
+
+
+create function tasks_descendants_stats(t tasks) returns jsonb as $$
+	select to_jsonb(task_stats) - 'collection' - 'task_id' from task_stats 
+	where collection = 'descendants' and task_id = t.id;
+$$ 
+language sql stable;
+
+
 create function tasks_descendant_tasks(t tasks) returns setof tasks as $$
 	select * from descendant_tasks(t.id)
 $$ 
 language sql stable;
 
 
-create function executions_duration(e executions) returns varchar as $$
+create function executions_duration(e executions) returns text as $$
 	select to_char(coalesce(e.finished_at, now()) - e.started_at, 'HH24:MI:SS:MS');
 $$ 
 language sql stable;
@@ -329,16 +315,19 @@ declare
 	updated_execution executions;
 	current_attempts integer;
 begin
-	update executions into updated_execution
+	if new_status not in ('success', 'timeout', 'failure') then
+		raise exception 'An exectution status should only be updated to success, timeout or failure – got %', new_status;
+	end if;
+
+	update executions 
 	set status = new_status, finished_at = now()
 	where id = execution_id
-	returning *;
+	returning * into updated_execution;
 
-	select attempts into current_attempts from tasks where id = task_id;
+	select attempts into current_attempts 
+	from tasks where id = updated_execution.task_id;
 
-	-- it's important to run this query sequentially (e.g. not in a CTE)
-	-- otherwise the locked event will trigger before the status_change event
-	if (current_attempts >= max_attempts or updated_execution.status = 'success') then
+	if updated_execution.status = 'success' or current_attempts >= max_attempts then
 		update tasks
 		set locked = true
 		where id = task_id;
@@ -405,12 +394,29 @@ create function dispatch_task_event () returns trigger as $$
 declare
 	event_type varchar := tg_argv[0];
 	payload jsonb;
+	task tasks;
+	execution executions;
+	execution_jsonb jsonb;
 begin
+	if to_jsonb(new) ? 'task_id' then
+		select * into task from tasks where id = new.task_id;
+	else
+		task = new;
+	end if;
+
+	execution = tasks_latest_execution(task);
+	execution_jsonb = jsonb_set(
+		to_jsonb(execution), 
+		'{duration}',
+		format('"%s"', executions_duration(execution))::jsonb
+	);
+	
 	payload = jsonb_build_object(
 		'event', event_type,
-		'task', row_to_json(new), 
-		'execution', row_to_json(tasks_latest_execution(new))
+		'task', to_jsonb(task), 
+		'execution', execution_jsonb
 	);
+	
 	perform pg_notify('taskq', payload::text);
 	return new;
 end
@@ -432,63 +438,32 @@ create trigger task_event_3_locked
 	execute procedure dispatch_task_event('locked');
 
 create trigger task_event_4_completed
-	after update on tasks
+	after update on task_stats
 	for each row when (
-		new.locked = true and
-		(old.descendants_stats ->> 'locked')::numeric != (old.descendants_stats ->> 'total')::numeric and
-		(new.descendants_stats ->> 'locked')::numeric = (new.descendants_stats ->> 'total')::numeric
+		new.collection = 'descendants' and
+		old.locked != old.total and
+		new.locked = new.total
 	)
 	execute procedure dispatch_task_event('complete'); 
 
 
--- utility functions --
+-- utility functions -- 
 
-create function update_stat (stats jsonb, key varchar, value integer) returns jsonb as $$
-begin
-	return jsonb_set(
-		stats::jsonb, 
-		Array[key],
-		((stats ->> key)::integer + value)::text::jsonb
-	);
-end
-$$ language plpgsql stable;
-
-
-create function update_stats (
-	stats jsonb, 
-	new_status varchar, 
-	old_status varchar, 
-	locked boolean
+create function inc_task_stat (
+	task_id integer, 
+	collection varchar, 
+	col_name varchar, 
+	value integer
 ) 
-returns jsonb as $$
-declare
-	base_stats jsonb := '{
-	"pending": 0, 
-	"failure": 0, 
-	"success": 0, 
-	"timeout": 0, 
-	"scheduled": 0, 
-	"running": 0,
-	"locked": 0,
-	"total": 0
-	}'::jsonb;
+returns void as $$
 begin
-	stats = coalesce(stats, base_stats);
-
-	if (locked = true) then
-		return update_stat(stats, 'locked', 1);
-	end if; 
-
-	if (locked = false) then
-		return update_stat(stats, 'locked', -1);
-	end if; 
-	
-	if (old_status is null) then
-	stats = update_stat(stats, 'total', 1);
-	else
-		stats = update_stat(stats, old_status, -1);
-	end if;
-
-	return update_stat(stats, new_status, 1);
-end
-$$ language plpgsql stable;
+	if value is null then 
+		value = 1; 
+	end if;	
+	execute	format(
+		'update task_stats set %1$I = %1$I + %2$L 
+		 where task_id = %3$L and collection = %4$L',
+		col_name, value, task_id, collection
+	);
+end;
+$$ language plpgsql volatile;

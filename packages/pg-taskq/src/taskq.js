@@ -83,6 +83,11 @@ class PgTaskQ {
           );
         };
 
+    const getStats = async () =>
+      this.pool
+        .query(queries.selectStats({ taskId: task.id }))
+        .then((result) => result.rows[0]);
+
     const params = {
       context: task.context,
       params: task.params,
@@ -90,6 +95,7 @@ class PgTaskQ {
       task,
       execution,
       log: taskLogger,
+      getStats,
     };
 
     const dependencies =

@@ -20,6 +20,14 @@ const selectTimedOutExecutions = ({ timeout }) => sql`
     AND now() > started_at + ${timeout};
 `;
 
+const selectStats = ({ taskId }) => sql`
+    SELECT 
+      tasks_children_stats(tasks) as children, 
+      tasks_descendants_stats(tasks) as descendants
+    FROM tasks
+    WHERE id = ${taskId};
+`;
+
 const insertTaskToExecuteAtDateTime = ({
   name,
   params,
@@ -76,6 +84,7 @@ module.exports = {
   listen,
   processNextTask,
   selectTimedOutExecutions,
+  selectStats,
   insertTaskToExecuteAtDateTime,
   insertTaskToExecuteIn,
   insertTaskToExecuteInSumOf,
