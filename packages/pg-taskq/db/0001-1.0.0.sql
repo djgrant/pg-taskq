@@ -404,6 +404,10 @@ begin
 		task = new;
 	end if;
 
+	-- if event_type = 'complete' and task.locked = false then
+	-- 	return new;
+	-- end if;
+
 	execution = tasks_latest_execution(task);
 	execution_jsonb = jsonb_set(
 		to_jsonb(execution), 

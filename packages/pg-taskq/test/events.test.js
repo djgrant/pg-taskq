@@ -5,7 +5,7 @@ let taskq;
 beforeAll(async () => {
   taskq = await setup({
     schema: "events_test",
-    timeout: "0.1 seconds",
+    timeout: "0.3 seconds",
     maxAttempts: 2,
   });
   taskq.start();
@@ -15,7 +15,7 @@ afterAll(async () => {
   await taskq.stop();
 });
 
-test("Running event", (done) => {
+test("running event", (done) => {
   taskq.take("Test Task", () => {});
   taskq.enqueue("Test Task");
   taskq.on("running", ({ task }) => {
@@ -26,7 +26,7 @@ test("Running event", (done) => {
   });
 });
 
-test("Success event", (done) => {
+test("success event", (done) => {
   taskq.enqueue("Test success");
   taskq.take("Test success", () => {});
   taskq.on("success", ({ task }) => {
@@ -37,7 +37,7 @@ test("Success event", (done) => {
   });
 });
 
-test("Failure event", (done) => {
+test("failure event", (done) => {
   taskq.enqueue("Test failure");
   taskq.take("Test failure", () => {
     throw new Error("Task failed");
@@ -50,7 +50,7 @@ test("Failure event", (done) => {
   });
 });
 
-test("Pending event", (done) => {
+test("pending event", (done) => {
   taskq.enqueue("Test pending");
   taskq.take("Test pending", () => {});
   taskq.on("pending", ({ task }) => {
@@ -61,7 +61,7 @@ test("Pending event", (done) => {
   });
 });
 
-test("Scheduled event", (done) => {
+test("scheduled event", (done) => {
   taskq.schedule({
     name: "Test scheduled",
     executeIn: "10 minutes",
@@ -75,7 +75,7 @@ test("Scheduled event", (done) => {
   });
 });
 
-test("Timeout event", (done) => {
+test("timeout event", (done) => {
   taskq.enqueue("Test timeout");
   taskq.take("Test timeout", async () => {
     await pause(1000);
@@ -88,7 +88,7 @@ test("Timeout event", (done) => {
   });
 });
 
-test("Locked event", (done) => {
+test("locked event", (done) => {
   taskq.enqueue("Test locked");
   taskq.take("Test locked", async () => {
     await pause(1000);
@@ -102,14 +102,16 @@ test("Locked event", (done) => {
   });
 });
 
-test("Complete event", (done) => {
+test("complete event", (done) => {
+  const innerTaskMock = jest.fn();
+  taskq.enqueue("Outer task");
   taskq.take("Outer task", ({ taskq }) => {
     taskq.enqueue("Inner task");
   });
-  taskq.take("Inner task", () => {});
-  taskq.enqueue("Outer task");
+  taskq.take("Inner task", innerTaskMock);
   taskq.on("complete", ({ task }) => {
     if (task.name === "Outer task") {
+      expect(innerTaskMock).toBeCalled();
       expect(task.status).toBe("success");
       done();
     }

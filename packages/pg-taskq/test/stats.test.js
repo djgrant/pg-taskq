@@ -1,4 +1,4 @@
-const { setup } = require("./utils");
+const { setup, pause } = require("./utils");
 
 jest.setTimeout(15000);
 
@@ -9,6 +9,7 @@ beforeAll(async () => {
     schema: "stats_test",
     timeout: "0.1s",
     maxAttempts: 2,
+    concurrency: 3,
   });
   taskq.start();
 });
@@ -50,11 +51,6 @@ it("caclulates children stats", (done) => {
 
 it("calculates descendant stats", (done) => {
   taskq.enqueue("Depth 1");
-
-  taskq.on("timeout", ({ task, execution }) => {
-    console.log(task.id, task.name, task.status, execution);
-  });
-
   taskq.take("Depth 2", async ({ taskq }) => {
     let i = 5;
     while (i--) {
