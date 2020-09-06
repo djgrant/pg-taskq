@@ -97,3 +97,14 @@ test("skipping already scheduled unique tasks", async () => {
 
   expect(executionMock).toBeCalledTimes(1);
 });
+
+it("picks a scheduled task off the queue", (done) => {
+  taskq.schedule({
+    name: "Quickly Scheduled Task",
+    executeIn: "1 second",
+  });
+
+  taskq.take("Quickly Scheduled Task", () => {
+    done();
+  });
+});

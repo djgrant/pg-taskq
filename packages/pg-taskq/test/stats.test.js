@@ -7,7 +7,7 @@ let taskq;
 beforeAll(async () => {
   taskq = await setup({
     schema: "stats_test",
-    timeout: "0.1s",
+    timeout: "0.5s",
     maxAttempts: 2,
     concurrency: 3,
   });

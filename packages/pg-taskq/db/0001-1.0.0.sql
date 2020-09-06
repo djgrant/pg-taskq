@@ -357,8 +357,8 @@ begin
 	from tasks t
 	where (select count(*) from tasks where status = 'running') < concurrent_executions
 	and t.status != 'running'
-	and t.status != 'scheduled'
 	and t.status != 'success'
+	and t.execute_at < now()
 	and t.locked = false 
 	and t.attempts < max_attempts
 	and (
