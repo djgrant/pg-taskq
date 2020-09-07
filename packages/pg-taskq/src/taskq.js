@@ -150,6 +150,7 @@ class PgTaskQ {
       this.on("complete", (params) => {
         if (taskName !== params.task.name) return;
         if (typeof take.onCompleteCallback !== "function") return;
+        delete params.taskq; // prevent user creating infinite loop
         take.onCompleteCallback(params);
       });
 
@@ -319,7 +320,6 @@ class PgTaskQ {
         status: "running",
         locked: false,
         execute_at: new Date(),
-        last_executed: new Date(),
         attempts: 1,
       },
       taskq: debugTaskQ,
