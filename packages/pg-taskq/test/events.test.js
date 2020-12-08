@@ -117,3 +117,42 @@ test("complete event", (done) => {
     }
   });
 });
+
+test("complete event, contrived", async (done) => {
+  const taskMock = jest.fn();
+
+  taskq.enqueue("Root task");
+
+  taskq
+    .take("Root task")
+    .onFirstAttempt(async ({ taskq: subTaskq }) => {
+      await taskq.enqueue("Sibling task");
+      await subTaskq.enqueue("Child task 1");
+    })
+    .onExecute(async ({ taskq }) => {
+      await taskq.enqueue("Child task 2");
+      await taskq.enqueue("Child task 3");
+    })
+    .onComplete(async ({ task, getStats }) => {
+      const stats = await getStats();
+      expect(task.locked).toEqual(true);
+      expect(stats.children.failure).toEqual(1);
+      expect(stats.children.total).toEqual(3);
+      expect(stats.descendants.total).toEqual(4);
+      expect(taskMock).toBeCalledTimes(1);
+      done();
+    });
+
+  taskq.take("Sibling task", () => {});
+  taskq.take("Child task 1", () => {});
+
+  taskq.take("Child task 2", () => {
+    throw new Error("Error");
+  });
+
+  taskq.take("Child task 3", ({ taskq }) => {
+    taskq.enqueue("Grandchild task");
+  });
+
+  taskq.take("Grandchild task", taskMock);
+});
