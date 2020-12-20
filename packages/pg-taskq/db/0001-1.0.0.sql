@@ -1,6 +1,6 @@
 create table tasks (
-	id serial primary key,
-	parent_id integer references tasks(id) on delete cascade,
+	id bigserial primary key,
+	parent_id bigint references tasks(id) on delete cascade,
 	name text not null,
 	params jsonb not null default '{}'::jsonb,
 	context jsonb not null default '{}'::jsonb,
@@ -12,7 +12,7 @@ create table tasks (
 );
 
 create table task_stats (
-	task_id integer references tasks(id) on delete cascade,
+	task_id bigint references tasks(id) on delete cascade,
 	collection varchar not null,
 	scheduled integer default 0,
 	pending integer default 0,
@@ -26,16 +26,16 @@ create table task_stats (
 );
 
 create table executions (
-	id serial primary key,
-	task_id integer not null references tasks(id) on delete cascade,
+	id bigserial primary key,
+	task_id bigint not null references tasks(id) on delete cascade,
 	status varchar default 'running',
 	started_at timestamptz default now(),
 	finished_at timestamptz
 );
 
 create table logs (
-	id serial primary key,
-	execution_id integer not null references executions(id) on delete cascade,
+	id bigserial primary key,
+	execution_id bigint not null references executions(id) on delete cascade,
 	time timestamptz default now(),
 	message jsonb
 );
@@ -192,7 +192,7 @@ create trigger task_unlocked
 
 -- search functions --
 
-create function descendant_tasks(task_id int) returns setof tasks as $$
+create function descendant_tasks(task_id bigint) returns setof tasks as $$
 	with recursive child_tasks as (
 		select * from tasks
 			where case when $1 is null 
@@ -207,10 +207,10 @@ create function descendant_tasks(task_id int) returns setof tasks as $$
 	select * from child_tasks;
 $$ language sql stable;
 
-comment on function descendant_tasks(int) is e'@sortable\n@filterable';
+comment on function descendant_tasks(bigint) is e'@sortable\n@filterable';
 
 
-create function child_tasks(task_id int) returns setof tasks as $$
+create function child_tasks(task_id bigint) returns setof tasks as $$
 	select * from tasks
 	where case when $1 is null 
 	then 
@@ -220,7 +220,7 @@ create function child_tasks(task_id int) returns setof tasks as $$
 	end
 $$ language sql stable;
 
-comment on function child_tasks(int) is e'@sortable\n@filterable';
+comment on function child_tasks(bigint) is e'@sortable\n@filterable';
 
 
 create function root_descendants_stats() returns jsonb as $$
@@ -306,8 +306,8 @@ language sql stable;
 
 create function update_execution_status(
 	new_status varchar, 
-	execution_id integer, 
-	task_id integer, 
+	execution_id bigint, 
+	task_id bigint, 
 	max_attempts integer
 ) 
 returns executions as $$
@@ -347,7 +347,7 @@ create function process_next_task(
 	max_attempts integer
 ) 
 returns table(
-	execution_id integer, 
+	execution_id bigint, 
 	task_name text
 ) as $$
 declare
@@ -455,7 +455,7 @@ create trigger task_event_4_completed
 -- utility functions -- 
 
 create function inc_task_stat (
-	task_id integer, 
+	task_id bigint, 
 	collection varchar, 
 	col_name varchar, 
 	value integer
