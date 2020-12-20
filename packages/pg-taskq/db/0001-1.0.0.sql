@@ -5,38 +5,38 @@ create table tasks (
 	params jsonb not null default '{}'::jsonb,
 	context jsonb not null default '{}'::jsonb,
 	execute_at timestamptz not null default now(),
-	locked boolean default false not null,
+	locked boolean not null default false,
 	status varchar not null,
-	attempts integer default 0 not null,
+	attempts integer not null default 0,
 	constraint tasks_unique_key unique (name, params, context, execute_at)
 );
 
 create table task_stats (
 	task_id bigint references tasks(id) on delete cascade,
 	collection varchar not null,
-	scheduled integer default 0,
-	pending integer default 0,
-	running integer default 0,
-	failure integer default 0,
-	timeout integer default 0,
-	success integer default 0,
-	locked integer default 0,
-	total integer default 0,
+	scheduled integer not null default 0,
+	pending integer not null default 0,
+	running integer not null default 0,
+	failure integer not null default 0,
+	timeout integer not null default 0,
+	success integer not null default 0,
+	locked integer not null default 0,
+	total integer not null default 0,
 	constraint task_stats_unique_key unique (task_id, collection)
 );
 
 create table executions (
 	id bigserial primary key,
 	task_id bigint not null references tasks(id) on delete cascade,
-	status varchar default 'running',
-	started_at timestamptz default now(),
+	status varchar not null default 'running',
+	started_at timestamptz not null default now(),
 	finished_at timestamptz
 );
 
 create table logs (
 	id bigserial primary key,
 	execution_id bigint not null references executions(id) on delete cascade,
-	time timestamptz default now(),
+	time timestamptz not null default now(),
 	message jsonb
 );
 
