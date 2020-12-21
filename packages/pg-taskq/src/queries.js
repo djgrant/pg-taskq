@@ -34,9 +34,10 @@ const insertTaskToExecuteAtDateTime = ({
   context,
   executeAtDateTime,
   parentId,
+  priority = 0,
 }) => sql`
-    INSERT INTO tasks (name, params, context, parent_id, execute_at) 
-    VALUES (${name}, ${params}, ${context}, ${parentId}, ${executeAtDateTime})
+    INSERT INTO tasks (name, params, context, parent_id, execute_at, priority) 
+    VALUES (${name}, ${params}, ${context}, ${parentId}, ${executeAtDateTime}, ${priority})
     ON CONFLICT ON CONSTRAINT tasks_unique_key DO NOTHING
     RETURNING *;
 `;
@@ -47,9 +48,10 @@ const insertTaskToExecuteIn = ({
   context,
   executeIn,
   parentId,
+  priority = 0,
 }) => sql`
-    INSERT INTO tasks (name, params, context, parent_id, execute_at) 
-    VALUES (${name}, ${params}, ${context}, ${parentId}, now() + ${executeIn}::interval)
+    INSERT INTO tasks (name, params, context, parent_id, execute_at, priority) 
+    VALUES (${name}, ${params}, ${context}, ${parentId}, now() + ${executeIn}::interval, ${priority})
     ON CONFLICT ON CONSTRAINT tasks_unique_key DO NOTHING
     RETURNING *;
 `;
@@ -60,9 +62,10 @@ const insertTaskToExecuteInSumOf = ({
   context,
   parentId,
   executeInSumOf: { datetime, interval },
+  priority = 0,
 }) => sql`
-    INSERT INTO tasks (name, params, context, parent_id, execute_at) 
-    VALUES (${name}, ${params}, ${context}, ${parentId}, ${datetime}::timestamp with time zone + ${interval}::interval)
+    INSERT INTO tasks (name, params, context, parent_id, execute_at, priority) 
+    VALUES (${name}, ${params}, ${context}, ${parentId}, ${datetime}::timestamp with time zone + ${interval}::interval, ${priority})
     ON CONFLICT ON CONSTRAINT tasks_unique_key DO NOTHING
     RETURNING *;
 `;

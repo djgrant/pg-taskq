@@ -5,6 +5,7 @@ create table tasks (
 	params jsonb not null default '{}'::jsonb,
 	context jsonb not null default '{}'::jsonb,
 	execute_at timestamptz not null default now(),
+	priority integer not null default 0,
 	locked boolean not null default false,
 	status varchar not null,
 	attempts integer not null default 0,
@@ -47,6 +48,7 @@ create index on executions (task_id, started_at desc);
 create index on tasks (id, parent_id);
 create index on tasks (execute_at desc);
 create index on tasks (execute_at asc);
+create index on tasks (priority asc);
 create index on tasks (status);
 create index on task_stats (task_id, collection);
 create index on logs (execution_id, time);
@@ -370,7 +372,7 @@ begin
 			tasks_last_executed(t) + (backoff_delay * t.attempts) < now()
 		end
 	)
-	order by t.execute_at asc
+	order by t.priority asc, t.execute_at asc
 	limit 1
 	for update skip locked;
 
@@ -378,7 +380,7 @@ begin
 		return;
 	end if;
 	
-	return query 
+	return query
 		insert into executions (task_id) 
 		values (next_task.id) 
 		returning 
@@ -386,6 +388,13 @@ begin
 			next_task.name as task_name;
 end
 $$ language plpgsql volatile;
+
+
+-- force execute --
+
+create function execute_task(task_id integer) returns executions as $$
+	insert into executions (task_id) values (task_id) returning *;
+$$ language sql volatile;
 
 
 -- task events --

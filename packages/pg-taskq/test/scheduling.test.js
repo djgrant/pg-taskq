@@ -108,3 +108,48 @@ it("picks a scheduled task off the queue", (done) => {
     done();
   });
 });
+
+test("tasks are run in priority order", (done) => {
+  const highPriorityTaskMock = jest.fn();
+
+  taskq.enqueue({
+    name: "Regular priority task",
+    priority: 1,
+  });
+
+  taskq.enqueue({
+    name: "High priority task",
+    priority: 0,
+  });
+
+  taskq.take("High priority task", highPriorityTaskMock);
+
+  taskq.take("Regular priority task", () => {
+    expect(highPriorityTaskMock).toBeCalled();
+    done();
+  });
+});
+
+test("priority takes precendence over time", (done) => {
+  // this test will fail between 00:00 and 00:01
+  const highPriorityTaskMock = jest.fn();
+
+  taskq.enqueue({
+    name: "Regular priority task",
+    priority: 1,
+    executeAt: "00:00",
+  });
+
+  taskq.enqueue({
+    name: "High priority task",
+    priority: 0,
+    executeAt: "00:01",
+  });
+
+  taskq.take("High priority task", highPriorityTaskMock);
+
+  taskq.take("Regular priority task", () => {
+    expect(highPriorityTaskMock).toBeCalled();
+    done();
+  });
+});

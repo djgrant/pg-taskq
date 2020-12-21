@@ -126,31 +126,35 @@ class PgTaskQ {
       this.on("timeout", (params) => {
         if (taskName !== params.task.name) return;
         if (typeof take.onTimeoutCallback !== "function") return;
+        delete params.taskq;
         take.onTimeoutCallback(params);
       });
 
       this.on("locked", (params) => {
         if (taskName !== params.task.name) return;
         if (typeof take.onLockedCallback !== "function") return;
+        delete params.taskq;
         take.onLockedCallback(params);
       });
 
       this.on("failure", (params) => {
         if (taskName !== params.task.name) return;
         if (typeof take.onFailureCallback !== "function") return;
+        delete params.taskq;
         take.onFailureCallback(params);
       });
 
       this.on("success", (params) => {
         if (taskName !== params.task.name) return;
         if (typeof take.onSuccessCallback !== "function") return;
+        delete params.taskq;
         take.onSuccessCallback(params);
       });
 
       this.on("complete", (params) => {
         if (taskName !== params.task.name) return;
         if (typeof take.onCompleteCallback !== "function") return;
-        delete params.taskq; // prevent user creating infinite loop
+        delete params.taskq;
         take.onCompleteCallback(params);
       });
 
