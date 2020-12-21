@@ -408,6 +408,7 @@ declare
 	execution_jsonb jsonb;
 begin
 	if to_jsonb(new) ? 'task_id' then
+		-- new is execution so query for task
 		select * into task from tasks where id = new.task_id;
 	else
 		task = new;

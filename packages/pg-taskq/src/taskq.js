@@ -89,10 +89,11 @@ class PgTaskQ {
         .then((result) => result.rows[0]);
 
     const params = {
+      task,
       context: task.context,
       params: task.params,
+      priority: task.priority,
       taskq: subTaskQ,
-      task,
       execution,
       log: taskLogger,
       getStats,
@@ -277,13 +278,10 @@ class PgTaskQ {
       .query(
         insertQuery({
           ...task,
-          params: task.params || {},
-          context:
-            task.context || (this.parentTask ? this.parentTask.context : {}),
-          parentId:
-            typeof task.parentId !== "undefined"
-              ? task.parentId
-              : this.parentTask && this.parentTask.id,
+          params: task.params,
+          context: task.context || this.parentTask?.context,
+          priority: task.priority || this.parentTask?.priority,
+          parentId: task.parentId || (this.parentTask && this.parentTask.id),
         })
       )
       .then((result) => result.rows[0])

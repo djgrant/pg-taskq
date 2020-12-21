@@ -30,10 +30,10 @@ const selectStats = ({ taskId }) => sql`
 
 const insertTaskToExecuteAtDateTime = ({
   name,
-  params,
-  context,
   executeAtDateTime,
   parentId,
+  params = {},
+  context = {},
   priority = 0,
 }) => sql`
     INSERT INTO tasks (name, params, context, parent_id, execute_at, priority) 
@@ -44,10 +44,10 @@ const insertTaskToExecuteAtDateTime = ({
 
 const insertTaskToExecuteIn = ({
   name,
-  params,
-  context,
   executeIn,
   parentId,
+  params = {},
+  context = {},
   priority = 0,
 }) => sql`
     INSERT INTO tasks (name, params, context, parent_id, execute_at, priority) 
@@ -58,10 +58,10 @@ const insertTaskToExecuteIn = ({
 
 const insertTaskToExecuteInSumOf = ({
   name,
-  params,
-  context,
   parentId,
   executeInSumOf: { datetime, interval },
+  params = {},
+  context = {},
   priority = 0,
 }) => sql`
     INSERT INTO tasks (name, params, context, parent_id, execute_at, priority) 

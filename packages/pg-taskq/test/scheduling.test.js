@@ -135,7 +135,7 @@ test("priority takes precendence over time", (done) => {
   const highPriorityTaskMock = jest.fn();
 
   taskq.enqueue({
-    name: "Regular priority task",
+    name: "Low priority task",
     priority: 1,
     executeAt: "00:00",
   });
@@ -148,8 +148,24 @@ test("priority takes precendence over time", (done) => {
 
   taskq.take("High priority task", highPriorityTaskMock);
 
-  taskq.take("Regular priority task", () => {
+  taskq.take("Low priority task", () => {
     expect(highPriorityTaskMock).toBeCalled();
+    done();
+  });
+});
+
+test("priority is passed to child tasks", (done) => {
+  taskq.enqueue({
+    name: "Low priority task",
+    priority: 5,
+  });
+
+  taskq.take("Low priority task", (self) => {
+    self.taskq.enqueue("Child task");
+  });
+
+  taskq.take("Child task", (self) => {
+    expect(self.priority).toBe(5);
     done();
   });
 });
