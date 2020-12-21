@@ -284,8 +284,7 @@ class PgTaskQ {
           parentId: task.parentId || (this.parentTask && this.parentTask.id),
         })
       )
-      .then((result) => result.rows[0])
-      .catch(this.log("error"));
+      .then((result) => result.rows[0]);
   }
 
   async debug(taskNameOrTask, task) {
