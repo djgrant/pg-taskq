@@ -62,6 +62,32 @@ taskq
     log("Task timed out");
   });
 
+taskq.enqueue("Outer task");
+
+taskq
+  .take("Outer task")
+  .onExecute(async (self) => {
+    await self.taskq.enqueue("Inner task", { rerun: true });
+  })
+  .onComplete((self) => {
+    self.log("=== Outer complete");
+  });
+
+taskq.take("Inner task", async (self) => {
+  if (self.params.rerun) {
+    const parent = await self.getParent();
+    await parent.taskq.enqueue("Inner task", { rerun: false });
+  }
+});
+
+taskq.take("Inner task", async (self) => {
+  if (self.params.rerun) {
+    await self.enqueueCopy({
+      params: { rerun: false },
+    });
+  }
+});
+
 taskq.on("success", (task) => {});
 taskq.on("failure", (task) => {});
 taskq.on("running", (task) => {});

@@ -42,7 +42,7 @@ class PgTaskQ {
     this.subscribers.push([event, subscriber]);
   }
 
-  createSubTaskQ({ parentTask }) {
+  createSubTaskq({ parentTask }) {
     return new PgTaskQ(Object.assign({}, this, { parentTask }));
   }
 
@@ -70,7 +70,7 @@ class PgTaskQ {
   }
 
   async getExecutionParams(task, execution) {
-    const subTaskQ = this.createSubTaskQ({ parentTask: task });
+    const subTaskq = this.createSubTaskq({ parentTask: task });
     const taskLogger = execution.id
       ? this.createExecutionLogger({
           executionId: execution.id,
@@ -88,15 +88,33 @@ class PgTaskQ {
         .query(queries.selectStats({ taskId: task.id }))
         .then((result) => result.rows[0]);
 
+    const getParent = async () => {
+      if (!task.parent_id) return null;
+      const result = await this.pool.query(
+        queries.selectTask({ taskId: task.parent_id })
+      );
+      const parentTask = result.rows[0];
+      if (!parentTask) return null;
+      return this.getExecutionParams(parentTask, execution);
+    };
+
+    const enqueueCopy = async (overrides) => {
+      const parent = await getParent();
+      const taskq = parent ? parent.taskq : this;
+      return taskq.enqueue({ ...task, ...overrides });
+    };
+
     const params = {
       task,
       context: task.context,
       params: task.params,
       priority: task.priority,
-      taskq: subTaskQ,
+      taskq: subTaskq,
       execution,
       log: taskLogger,
       getStats,
+      getParent,
+      enqueueCopy,
     };
 
     const dependencies =
@@ -496,6 +514,9 @@ class PgTaskQ {
       logInfo(
         `Task "${task.name}" successfully executed (execution id: ${task.execution_id})`
       );
+    });
+    this.on("complete", ({ task }) => {
+      logInfo(`Task "${task.name}" completed`);
     });
     this.on("no-op", ({ task }) => {
       logInfo(`Already enqueued task "${task.name}" (task id: ${task.id})`);

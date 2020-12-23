@@ -85,6 +85,51 @@ describe("Callback form", () => {
     });
   });
 
+  it("Can enqueue a copy of itself", (done) => {
+    let childTaskCalls = 0;
+    taskq.enqueue("Parent Task 2");
+    taskq
+      .take("Parent Task 2")
+      .onExecute(async (self) => {
+        await self.taskq.enqueue("Child Task 2", { rerun: true });
+      })
+      .onComplete(() => {
+        expect(childTaskCalls).toBe(2);
+        done();
+      });
+
+    taskq.take("Child Task 2", async (self) => {
+      childTaskCalls++;
+      if (self.params.rerun) {
+        await self.enqueueCopy({
+          params: { rerun: false },
+        });
+      }
+    });
+  });
+
+  it("Can traverse up to its parent task", (done) => {
+    let childTaskCalls = 0;
+    taskq.enqueue("Parent Task 3");
+    taskq
+      .take("Parent Task 3")
+      .onExecute(async (self) => {
+        await self.taskq.enqueue("Child Task 3", { rerun: true });
+      })
+      .onComplete(() => {
+        expect(childTaskCalls).toBe(2);
+        done();
+      });
+
+    taskq.take("Child Task 3", async (self) => {
+      childTaskCalls++;
+      if (self.params.rerun) {
+        const parent = await self.getParent();
+        await parent.taskq.enqueue("Child Task 3", { rerun: false });
+      }
+    });
+  });
+
   it("Takes multiple tasks", (done) => {
     let calls = 0;
     taskq.enqueue("Test multiple tasks 1");
@@ -149,16 +194,18 @@ describe("Chained methods", () => {
   });
 
   test("onComplete", (done) => {
+    const innerTaskMock = jest.fn();
     taskq.enqueue("Outer task");
     taskq
       .take("Outer task")
-      .onExecute(({ taskq }) => {
-        taskq.enqueue("Inner task");
+      .onExecute(async ({ taskq }) => {
+        await taskq.enqueue("Inner task");
       })
       .onComplete(() => {
+        expect(innerTaskMock).toBeCalledTimes(1);
         done();
       });
-    taskq.take("Inner task", () => {});
+    taskq.take("Inner task", innerTaskMock);
   });
 
   test("async success", (done) => {
@@ -166,7 +213,7 @@ describe("Chained methods", () => {
     taskq.enqueue("Test async success");
     taskq
       .take("Test async success")
-      .onExecute(async ({ testLogger }) => {
+      .onExecute(async () => {
         await Promise.resolve();
         testValue = 42;
       })

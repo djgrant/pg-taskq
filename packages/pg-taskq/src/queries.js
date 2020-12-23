@@ -13,6 +13,12 @@ const processNextTask = ({
   select * from process_next_task(${backoffDecay}, ${backoffDelay}, ${concurrentExecutions}, ${maxAttempts});
 `;
 
+const selectTask = ({ taskId }) => sql`
+    SELECT *
+    FROM tasks
+    WHERE id = ${taskId};
+`;
+
 const selectTimedOutExecutions = ({ timeout }) => sql`
     SELECT * 
     FROM executions
@@ -87,6 +93,7 @@ module.exports = {
   listen,
   processNextTask,
   selectTimedOutExecutions,
+  selectTask,
   selectStats,
   insertTaskToExecuteAtDateTime,
   insertTaskToExecuteIn,
