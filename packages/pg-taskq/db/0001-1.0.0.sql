@@ -304,6 +304,18 @@ $$
 language sql stable;
 
 
+create function tasks_complete(t tasks) returns boolean as $$
+	select exists (
+		select true from tasks
+		inner join task_stats on tasks.id = task_stats.task_id 
+		where tasks.id = t.id
+		and task_stats.collection = 'descendants'
+		and task_stats.locked = task_stats.total
+	);
+$$
+language sql stable;
+
+
 -- mutation functions --
 
 create function update_execution_status(
@@ -408,7 +420,7 @@ declare
 	execution_jsonb jsonb;
 begin
 	if to_jsonb(new) ? 'task_id' then
-		-- new is execution so query for task
+		-- `new` is an `execution` or `task_stat` row
 		select * into task from tasks where id = new.task_id;
 	else
 		task = new;
@@ -456,8 +468,7 @@ create trigger task_event_4_completed
 	for each row when (
 		new.collection = 'descendants' and
 		old.locked != old.total and
-		new.locked = new.total and
-		new.locked > 0
+		new.locked = new.total
 	)
 	execute procedure dispatch_task_event('complete'); 
 
