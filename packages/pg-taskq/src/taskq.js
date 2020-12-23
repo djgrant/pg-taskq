@@ -117,6 +117,14 @@ class PgTaskQ {
 
     const take = new Take();
 
+    const withErrorHandler = (cb) => async (...args) => {
+      try {
+        await cb(...args);
+      } catch (err) {
+        this.log("error", err);
+      }
+    };
+
     taskNames.forEach((taskName) => {
       this.registeredTasks.push({
         name: taskName,
@@ -128,35 +136,35 @@ class PgTaskQ {
         if (taskName !== params.task.name) return;
         if (typeof take.onTimeoutCallback !== "function") return;
         delete params.taskq;
-        take.onTimeoutCallback(params);
+        withErrorHandler(take.onTimeoutCallback)(params);
       });
 
       this.on("locked", (params) => {
         if (taskName !== params.task.name) return;
         if (typeof take.onLockedCallback !== "function") return;
         delete params.taskq;
-        take.onLockedCallback(params);
+        withErrorHandler(take.onLockedCallback)(params);
       });
 
       this.on("failure", (params) => {
         if (taskName !== params.task.name) return;
         if (typeof take.onFailureCallback !== "function") return;
         delete params.taskq;
-        take.onFailureCallback(params);
+        withErrorHandler(take.onFailureCallback)(params);
       });
 
       this.on("success", (params) => {
         if (taskName !== params.task.name) return;
         if (typeof take.onSuccessCallback !== "function") return;
         delete params.taskq;
-        take.onSuccessCallback(params);
+        withErrorHandler(take.onSuccessCallback)(params);
       });
 
-      this.on("complete", (params) => {
+      this.on("complete", async (params) => {
         if (taskName !== params.task.name) return;
         if (typeof take.onCompleteCallback !== "function") return;
         delete params.taskq;
-        take.onCompleteCallback(params);
+        withErrorHandler(take.onCompleteCallback)(params);
       });
 
       this.on("running", async (params) => {
