@@ -40,6 +40,13 @@ const selectStats = ({ taskId }) => sql`
   WHERE id = ${taskId};
 `;
 
+const selectTaskCompleteStatus = ({ taskId }) => sql`
+  SELECT 
+    tasks_complete(tasks) as complete
+  FROM tasks
+  WHERE id = ${taskId};
+`;
+
 const insertTaskToExecuteAtDateTime = ({
   name,
   executeAtDateTime,
@@ -114,6 +121,7 @@ module.exports = {
   selectTimedOutExecutions,
   selectTask,
   selectStats,
+  selectTaskCompleteStatus,
   insertTaskToExecuteAtDateTime,
   insertTaskToExecuteIn,
   insertTaskToExecuteInSumOf,

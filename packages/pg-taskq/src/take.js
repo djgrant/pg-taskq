@@ -27,6 +27,10 @@ class Take {
     this.onCompleteCallback = cb;
     return this;
   }
+  onBeforeComplete(cb) {
+    this.onBeforeCompleteCallback = cb;
+    return this;
+  }
 }
 
 module.exports = { Take };

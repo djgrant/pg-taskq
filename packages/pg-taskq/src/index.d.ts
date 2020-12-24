@@ -59,6 +59,7 @@ declare module "pg-taskq" {
     onTimeout(cb: OnExecute<Deps>): Take<Deps>;
     onSuccess(cb: OnExecute<Deps>): Take<Deps>;
     onComplete(cb: OnExecute<Deps>): Take<Deps>;
+    onBeforeComplete(cb: OnExecute<Deps>): Take<Deps>;
   }
 
   interface Options<Deps> {
@@ -122,6 +123,7 @@ declare module "pg-taskq" {
     }) => Promise<void>;
   };
 
+  // todo: type safe execution params
   type OnExecute<Deps> = (opts: ExecuteParams<Deps>) => void | Promise<void>;
   type LogLevels = "silly" | "debug" | "info" | "warn" | "error" | "critcal";
 }

@@ -224,6 +224,32 @@ describe("Chained methods", () => {
     taskq.take("Inner task", innerTaskMock);
   });
 
+  test("onBeforeComplete", (done) => {
+    let attempts = 2;
+    const oneOffChildMock = jest.fn();
+    const repeatedChildMock = jest.fn();
+
+    taskq.enqueue("onBeforeComplete");
+
+    taskq
+      .take("onBeforeComplete")
+      .onExecute((self) => {
+        self.taskq.enqueue("One-off child task");
+      })
+      .onBeforeComplete(async (self) => {
+        if (!attempts--) return;
+        await self.taskq.enqueue("Repeated child task");
+      })
+      .onComplete(() => {
+        expect(oneOffChildMock).toBeCalledTimes(1);
+        expect(repeatedChildMock).toBeCalledTimes(2);
+        done();
+      });
+
+    taskq.take("One-off child task", oneOffChildMock);
+    taskq.take("Repeated child task", repeatedChildMock);
+  });
+
   test("async success", (done) => {
     let testValue;
     taskq.enqueue("Test async success");

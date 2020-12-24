@@ -154,6 +154,13 @@ class PgTaskQ {
       }
     };
 
+    // methods that could cause infinite loops or adding nodes to a completed task
+    const withoutFootguns = (params) => {
+      delete params.taskq;
+      delete params.enqueueCopy;
+      return params;
+    };
+
     taskNames.forEach((taskName) => {
       this.registeredTasks.push({
         name: taskName,
@@ -164,36 +171,43 @@ class PgTaskQ {
       this.on("timeout", (params) => {
         if (taskName !== params.task.name) return;
         if (typeof take.onTimeoutCallback !== "function") return;
-        delete params.taskq;
-        withErrorHandler(take.onTimeoutCallback)(params);
+        withErrorHandler(take.onTimeoutCallback)(withoutFootguns(params));
       });
 
       this.on("locked", (params) => {
         if (taskName !== params.task.name) return;
         if (typeof take.onLockedCallback !== "function") return;
-        delete params.taskq;
-        withErrorHandler(take.onLockedCallback)(params);
+        withErrorHandler(take.onLockedCallback)(withoutFootguns(params));
       });
 
       this.on("failure", (params) => {
         if (taskName !== params.task.name) return;
         if (typeof take.onFailureCallback !== "function") return;
-        delete params.taskq;
-        withErrorHandler(take.onFailureCallback)(params);
+        withErrorHandler(take.onFailureCallback)(withoutFootguns(params));
       });
 
       this.on("success", (params) => {
         if (taskName !== params.task.name) return;
         if (typeof take.onSuccessCallback !== "function") return;
-        delete params.taskq;
-        withErrorHandler(take.onSuccessCallback)(params);
+        withErrorHandler(take.onSuccessCallback)(withoutFootguns(params));
       });
 
       this.on("complete", async (params) => {
         if (taskName !== params.task.name) return;
-        if (typeof take.onCompleteCallback !== "function") return;
-        delete params.taskq;
-        withErrorHandler(take.onCompleteCallback)(params);
+        if (typeof take.onBeforeCompleteCallback === "function") {
+          // this is moment to decomplete a task before onComplete is called
+          // but not a good moment to enqueue a copy of itself
+          // as we can't stop its parent's onComplete being called
+          delete params.enqueueCopy;
+          await withErrorHandler(take.onBeforeCompleteCallback)(params);
+          const taskIsStillComplete = await this.isTaskComplete({
+            taskId: params.task.id,
+          });
+          if (!taskIsStillComplete) return;
+        }
+        if (typeof take.onCompleteCallback === "function") {
+          withErrorHandler(take.onCompleteCallback)(withoutFootguns(params));
+        }
       });
 
       this.on("running", async (params) => {
@@ -322,6 +336,15 @@ class PgTaskQ {
         })
       )
       .then((result) => result.rows[0]);
+  }
+
+  async isTaskComplete({ taskId }) {
+    const result = await this.pool.query(
+      queries.selectTaskCompleteStatus({ taskId })
+    );
+    const task = result.rows[0];
+    if (!task) return false;
+    return task.complete;
   }
 
   async debug(taskNameOrTask, task) {
