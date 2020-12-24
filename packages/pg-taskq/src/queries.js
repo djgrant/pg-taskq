@@ -10,28 +10,34 @@ const processNextTask = ({
   concurrentExecutions,
   maxAttempts,
 }) => sql`
-  select * from process_next_task(${backoffDecay}, ${backoffDelay}, ${concurrentExecutions}, ${maxAttempts});
+  SELECT * 
+  FROM process_next_task(
+    ${backoffDecay}, 
+    ${backoffDelay}, 
+    ${concurrentExecutions}, 
+    ${maxAttempts}
+  );
 `;
 
 const selectTask = ({ taskId }) => sql`
-    SELECT *
-    FROM tasks
-    WHERE id = ${taskId};
+  SELECT *
+  FROM tasks
+  WHERE id = ${taskId};
 `;
 
 const selectTimedOutExecutions = ({ timeout }) => sql`
-    SELECT * 
-    FROM executions
-    WHERE status = 'running'
-    AND now() > started_at + ${timeout};
+  SELECT * 
+  FROM executions
+  WHERE status = 'running'
+  AND now() > started_at + ${timeout};
 `;
 
 const selectStats = ({ taskId }) => sql`
-    SELECT 
-      tasks_children_stats(tasks) as children, 
-      tasks_descendants_stats(tasks) as descendants
-    FROM tasks
-    WHERE id = ${taskId};
+  SELECT 
+    tasks_children_stats(tasks) as children, 
+    tasks_descendants_stats(tasks) as descendants
+  FROM tasks
+  WHERE id = ${taskId};
 `;
 
 const insertTaskToExecuteAtDateTime = ({
@@ -77,7 +83,15 @@ const insertTaskToExecuteInSumOf = ({
 `;
 
 const updateExecution = ({ status, executionId, taskId, maxAttempts }) => sql`
-  select * from update_execution_status(${status}, ${executionId}, ${taskId}, ${maxAttempts});
+  SELECT * 
+  FROM update_execution_status(
+    ${status}, 
+    ${executionId}, 
+    ${taskId}, 
+    ${maxAttempts}
+  );
+`;
+
 `;
 
 const insertLogs = ({ logs }) => {
