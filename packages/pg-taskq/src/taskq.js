@@ -100,9 +100,10 @@ class PgTaskQ {
 
     const updateContext = async (patch) => {
       const newContext = { ...task.context, ...patch };
-      const updatedContext = await this.pool.query(
+      const { rows } = await this.pool.query(
         queries.updateContext({ context: newContext, taskId: task.id })
       );
+      const updatedContext = rows[0]?.context;
       task.context = updatedContext;
       return updatedContext;
     };

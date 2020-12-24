@@ -45,8 +45,9 @@ describe("Callback form", () => {
       context: { a: 1, b: 2 },
     });
     taskq
-      .take("Test updating context", ({ updateContext }) => {
-        updateContext({ a: 2 });
+      .take("Test updating context", async ({ updateContext }) => {
+        const newContext = await updateContext({ a: 2 });
+        expect(newContext).toEqual({ a: 2, b: 2 });
       })
       .onSuccess(({ context }) => {
         expect(context).toEqual({ a: 2, b: 2 });
