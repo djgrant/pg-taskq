@@ -92,6 +92,11 @@ const updateExecution = ({ status, executionId, taskId, maxAttempts }) => sql`
   );
 `;
 
+const updateContext = ({ taskId, context }) => sql`
+  UPDATE tasks 
+  SET context = ${context}
+  WHERE id = ${taskId}
+  RETURNING context;
 `;
 
 const insertLogs = ({ logs }) => {
@@ -113,5 +118,6 @@ module.exports = {
   insertTaskToExecuteIn,
   insertTaskToExecuteInSumOf,
   updateExecution,
+  updateContext,
   insertLogs,
 };

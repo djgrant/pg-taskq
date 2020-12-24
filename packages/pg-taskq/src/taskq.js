@@ -98,6 +98,15 @@ class PgTaskQ {
       return this.getExecutionParams(parentTask, execution);
     };
 
+    const updateContext = async (patch) => {
+      const newContext = { ...task.context, ...patch };
+      const updatedContext = await this.pool.query(
+        queries.updateContext({ context: newContext, taskId: task.id })
+      );
+      task.context = updatedContext;
+      return updatedContext;
+    };
+
     const enqueueCopy = async (overrides) => {
       const parent = await getParent();
       const taskq = parent ? parent.taskq : this;
@@ -115,6 +124,7 @@ class PgTaskQ {
       getStats,
       getParent,
       enqueueCopy,
+      updateContext,
     };
 
     const dependencies =

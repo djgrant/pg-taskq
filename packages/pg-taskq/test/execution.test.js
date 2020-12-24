@@ -39,6 +39,21 @@ describe("Callback form", () => {
     });
   });
 
+  it("Can update its own context", (done) => {
+    taskq.enqueue({
+      name: "Test updating context",
+      context: { a: 1, b: 2 },
+    });
+    taskq
+      .take("Test updating context", ({ updateContext }) => {
+        updateContext({ a: 2 });
+      })
+      .onSuccess(({ context }) => {
+        expect(context).toEqual({ a: 2, b: 2 });
+        done();
+      });
+  });
+
   it("Is passed the task and execution rows", (done) => {
     taskq.enqueue("Test task row");
     taskq.take("Test task row", ({ task, execution }) => {
