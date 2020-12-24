@@ -5,6 +5,7 @@
   "author": "Daniel Grant <hello@danielgrant.co>",
   "repository": "github:djgrant/pg-taskq",
   "main": "./src/index.js",
+  "types": "./src/index.d.ts",
   "bin": "./bin/taskq.sh",
   "files": [
     "bin",
