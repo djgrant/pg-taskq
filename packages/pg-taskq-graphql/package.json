@@ -1,6 +1,6 @@
 {
   "name": "@djgrant/pg-taskq-graphql",
-  "version": "1.0.0-alpha.6",
+  "version": "1.0.0-alpha.7",
   "description": "GraphQL API for pg-taskq",
   "author": "Daniel Grant <hello@danielgrant.co>",
   "repository": "github:djgrant/pg-taskq",
