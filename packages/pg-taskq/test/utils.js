@@ -1,7 +1,7 @@
 const cp = require("child_process");
 const util = require("util");
 const pg = require("pg");
-const { PgTaskQ } = require("pg-taskq");
+const { PgTaskQ } = require("@djgrant/pg-taskq");
 
 const exec = util.promisify(cp.exec);
 

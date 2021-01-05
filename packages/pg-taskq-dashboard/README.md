@@ -4,7 +4,9 @@
 
 ```js
 const express = require("express");
-const { pgTaskqDashboard } = require("pg-taskq-dashboard/server/express");
+const {
+  pgTaskqDashboard,
+} = require("@djgrant/pg-taskq-dashboard/server/express");
 
 const app = express();
 

@@ -1,5 +1,5 @@
 const { setup, pause } = require("./utils");
-const { PgTaskQ } = require("pg-taskq");
+const { PgTaskQ } = require("@djgrant/pg-taskq");
 
 let taskq;
 

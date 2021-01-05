@@ -1,4 +1,4 @@
-const { PgTaskQ } = require("pg-taskq");
+const { PgTaskQ } = require("@djgrant/pg-taskq");
 
 const taskq = new PgTaskQ({
   logLevel: "debug",

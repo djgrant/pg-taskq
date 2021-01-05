@@ -1,5 +1,5 @@
 const express = require("express");
-const { createPgTaskqApp } = require("pg-taskq-server");
+const { createPgTaskqApp } = require("@djgrant/pg-taskq-server");
 
 const app = express();
 const taskqApp = createPgTaskqApp({ schema: "taskq" });
