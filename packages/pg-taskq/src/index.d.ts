@@ -1,4 +1,4 @@
-declare module "pg-taskq" {
+declare module "@djgrant/pg-taskq" {
   import * as pg from "pg";
 
   class PgTaskQ<Deps> {
