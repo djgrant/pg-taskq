@@ -22,6 +22,8 @@ const replacer = (_: string, value: any) => {
         value.stack +
         "\n" +
         indentString(JSON.stringify(getErrorMeta(value), replacer, 4), 4);
+    } else {
+      value = value.stack;
     }
   }
 
