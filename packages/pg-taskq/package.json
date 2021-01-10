@@ -1,6 +1,6 @@
 {
   "name": "@djgrant/pg-taskq",
-  "version": "1.0.0-alpha.24",
+  "version": "1.0.0-alpha.25",
   "description": "A Postgres backed task queue for NodeJS",
   "author": "Daniel Grant <hello@danielgrant.co>",
   "repository": "github:djgrant/pg-taskq",
