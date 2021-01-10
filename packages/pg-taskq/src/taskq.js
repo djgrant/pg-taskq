@@ -195,9 +195,9 @@ class PgTaskQ {
       this.on("complete", async (params) => {
         if (taskName !== params.task.name) return;
         if (typeof take.onBeforeCompleteCallback === "function") {
-          // this is moment to decomplete a task before onComplete is called
-          // but not a good moment to enqueue a copy of itself
-          // as we can't stop its parent's onComplete being called
+          // this is the moment to decomplete a task before onComplete is called
+          // but not a good moment to enqueue a copy of itself as we can't stop
+          // its parent's onComplete getting called before the copy triggers the parent again
           delete params.enqueueCopy;
           await withErrorHandler(take.onBeforeCompleteCallback)(params);
           const taskIsStillComplete = await this.isTaskComplete({
