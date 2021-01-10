@@ -299,7 +299,7 @@ language sql stable;
 
 
 create function executions_duration(e executions) returns text as $$
-	select to_char(coalesce(e.finished_at, now()) - e.started_at, 'HH24:MI:SS:MS');
+	select to_char(coalesce(e.finished_at, now()) - e.started_at, 'HH24:MI:SS.MS');
 $$ 
 language sql stable;
 
