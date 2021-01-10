@@ -1315,13 +1315,13 @@
     postcss "7.0.32"
     purgecss "^2.3.0"
 
-"@gqless/cli@^0.0.1-alpha.31":
-  version "0.0.1-alpha.31"
-  resolved "https://registry.yarnpkg.com/@gqless/cli/-/cli-0.0.1-alpha.31.tgz#ce9f926f1ca57a3cf215f6b474ef5b39934c31c6"
-  integrity sha512-0l9PADMn1YhOadr59GhFMkfgulZL/1aq+nbWe1PmtwV2gu4burpiWqyNTEwLc3Z/Ru2wvF8FDTdDmh7pAso9Yw==
+"@gqless/cli@^1.0.0-alpha.31":
+  version "1.0.0-alpha.33"
+  resolved "https://registry.yarnpkg.com/@gqless/cli/-/cli-1.0.0-alpha.33.tgz#217ebc3989d9558e4880a5ca19577b76d6114a82"
+  integrity sha512-lrsbEQ1zeuVR1A+NpBdq+TD5LbLXCMVGke4j0xc+EtgKCVgT2bcNazr7J5L3Eio7fC/LEBgOa4dtKHJf5p6paQ==
   dependencies:
     "@endemolshinegroup/cosmiconfig-typescript-loader" "^1.0.1"
-    "@gqless/schema" "^0.0.1-alpha.30"
+    "@gqless/schema" "^1.0.0-alpha.33"
     "@oclif/command" "^1.5.19"
     "@oclif/config" "^1.14.0"
     "@oclif/plugin-help" "^2.2.3"
@@ -1332,17 +1332,17 @@
     prettier "^1.19.1"
     tslib "^1.11.1"
 
-"@gqless/react@^0.0.1-alpha.28":
-  version "0.0.1-alpha.28"
-  resolved "https://registry.yarnpkg.com/@gqless/react/-/react-0.0.1-alpha.28.tgz#34f6a483e2d3b7f9c2436bfdb4c2b4c564d149c0"
-  integrity sha512-eUxmAqh6BZ0ddCpuAicVDPaCWbOobWMhiSA+criQZpDEijiI94ubkKm/dPpTqmbKr2erMuZ4qzpH2JcVuN6DUg==
+"@gqless/react@^1.0.0-alpha.31":
+  version "1.0.0-alpha.31"
+  resolved "https://registry.yarnpkg.com/@gqless/react/-/react-1.0.0-alpha.31.tgz#ddfc12378c9a545751d55090f4dec1155a82d1e6"
+  integrity sha512-YOjmzRPw99rjhA+PsQsHW57ZhnbTcQHGI78FndtPQp7tkR+gO8Lw9xOd9dU1MCO4HDQlzedZ3CU/mwbV3wgPUg==
   dependencies:
     tslib "^1.11.1"
 
-"@gqless/schema@^0.0.1-alpha.30":
-  version "0.0.1-alpha.31"
-  resolved "https://registry.yarnpkg.com/@gqless/schema/-/schema-0.0.1-alpha.31.tgz#76903546ad9090363dcc21a69b672e398bcb5f3b"
-  integrity sha512-V794wq1nFpMIQk+I6VfJQaq5U//x23Vb0gApVX670z1cnEn2iUVTxpAF/b6ZOg2iL9JQdBClz9y62vU2p/sLow==
+"@gqless/schema@^1.0.0-alpha.33":
+  version "1.0.0-alpha.33"
+  resolved "https://registry.yarnpkg.com/@gqless/schema/-/schema-1.0.0-alpha.33.tgz#d84bf7d8ae2c45b22046d2fe5778d5cbc34766f5"
+  integrity sha512-hhMvH6HrF7UbaHIHbtafmr2DtEPdbU/kQXR8VBffDdJeVMzZIDK+W4Y5EOoYGGA2RFp5iI4Xgza+9PWYtHYk6w==
   dependencies:
     "@gqless/utils" "^0.0.1-alpha.26"
     tslib "^1.11.1"

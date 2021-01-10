@@ -32,7 +32,7 @@ type TasksProps = RouteComponentProps<{ taskId?: string }>;
 
 export const Tasks: React.FC<TasksProps> = observer(
   graphql((props) => {
-    const taskId = props.taskId ? Number(props.taskId) || null : null;
+    const taskId = props.taskId ? props.taskId || null : null;
     const params = useParams();
     const queryParams = {
       taskId,

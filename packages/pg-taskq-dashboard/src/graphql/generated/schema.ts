@@ -203,6 +203,61 @@ export const schema = {
             true
           );
         },
+        get taskStatsConnection() {
+          return new FieldNode(
+            schema.TaskStatsConnection,
+            new Arguments({
+              get first() {
+                return new ArgumentsField(schema.Int, true);
+              },
+              get last() {
+                return new ArgumentsField(schema.Int, true);
+              },
+              get offset() {
+                return new ArgumentsField(schema.Int, true);
+              },
+              get before() {
+                return new ArgumentsField(schema.Cursor, true);
+              },
+              get after() {
+                return new ArgumentsField(schema.Cursor, true);
+              },
+              get orderBy() {
+                return new ArgumentsField(
+                  new ArrayNode(schema.TaskStatsOrderBy, true),
+                  true
+                );
+              },
+              get condition() {
+                return new ArgumentsField(schema.TaskStatCondition, true);
+              },
+            }),
+            true
+          );
+        },
+        get taskStats() {
+          return new FieldNode(
+            new ArrayNode(schema.TaskStat, true),
+            new Arguments({
+              get first() {
+                return new ArgumentsField(schema.Int, true);
+              },
+              get offset() {
+                return new ArgumentsField(schema.Int, true);
+              },
+              get orderBy() {
+                return new ArgumentsField(
+                  new ArrayNode(schema.TaskStatsOrderBy, true),
+                  true
+                );
+              },
+              get condition() {
+                return new ArgumentsField(schema.TaskStatCondition, true);
+              },
+            }),
+            true
+          );
+        },
         get tasksConnection() {
           return new FieldNode(
             schema.TasksConnection,
@@ -264,7 +319,7 @@ export const schema = {
             new Arguments(
               {
                 get id() {
-                  return new ArgumentsField(schema.Int, false);
+                  return new ArgumentsField(schema.BigInt, false);
                 },
               },
               true
@@ -278,7 +333,7 @@ export const schema = {
             new Arguments(
               {
                 get id() {
-                  return new ArgumentsField(schema.Int, false);
+                  return new ArgumentsField(schema.BigInt, false);
                 },
               },
               true
@@ -314,13 +369,16 @@ export const schema = {
             true
           );
         },
-        get task() {
+        get taskStatByTaskIdAndCollection() {
           return new FieldNode(
-            schema.Task,
+            schema.TaskStat,
             new Arguments(
               {
-                get id() {
-                  return new ArgumentsField(schema.Int, false);
+                get taskId() {
+                  return new ArgumentsField(schema.BigInt, false);
+                },
+                get collection() {
+                  return new ArgumentsField(schema.String, false);
                 },
               },
               true
@@ -328,16 +386,27 @@ export const schema = {
             true
           );
         },
-        get taskByNameAndParentIdAndParamsAndContextAndExecuteAt() {
+        get task() {
+          return new FieldNode(
+            schema.Task,
+            new Arguments(
+              {
+                get id() {
+                  return new ArgumentsField(schema.BigInt, false);
+                },
+              },
+              true
+            ),
+            true
+          );
+        },
+        get taskByNameAndParamsAndContextAndExecuteAt() {
           return new FieldNode(
             schema.Task,
             new Arguments(
               {
                 get name() {
                   return new ArgumentsField(schema.String, false);
-                },
-                get parentId() {
-                  return new ArgumentsField(schema.Int, false);
                 },
                 get params() {
                   return new ArgumentsField(schema.JSON, false);
@@ -359,7 +428,7 @@ export const schema = {
             schema.TasksConnection,
             new Arguments({
               get taskId() {
-                return new ArgumentsField(schema.Int, true);
+                return new ArgumentsField(schema.BigInt, true);
               },
               get first() {
                 return new ArgumentsField(schema.Int, true);
@@ -394,7 +463,7 @@ export const schema = {
             new ArrayNode(schema.Task, true),
             new Arguments({
               get taskId() {
-                return new ArgumentsField(schema.Int, true);
+                return new ArgumentsField(schema.BigInt, true);
               },
               get first() {
                 return new ArgumentsField(schema.Int, true);
@@ -420,7 +489,7 @@ export const schema = {
             schema.TasksConnection,
             new Arguments({
               get taskId() {
-                return new ArgumentsField(schema.Int, true);
+                return new ArgumentsField(schema.BigInt, true);
               },
               get first() {
                 return new ArgumentsField(schema.Int, true);
@@ -455,7 +524,7 @@ export const schema = {
             new ArrayNode(schema.Task, false),
             new Arguments({
               get taskId() {
-                return new ArgumentsField(schema.Int, true);
+                return new ArgumentsField(schema.BigInt, true);
               },
               get first() {
                 return new ArgumentsField(schema.Int, true);
@@ -481,43 +550,6 @@ export const schema = {
         },
         get rootDescendantsStats() {
           return new FieldNode(schema.JSON, undefined, true);
-        },
-        get updateStat() {
-          return new FieldNode(
-            schema.JSON,
-            new Arguments({
-              get stats() {
-                return new ArgumentsField(schema.JSON, true);
-              },
-              get key() {
-                return new ArgumentsField(schema.String, true);
-              },
-              get value() {
-                return new ArgumentsField(schema.Int, true);
-              },
-            }),
-            true
-          );
-        },
-        get updateStats() {
-          return new FieldNode(
-            schema.JSON,
-            new Arguments({
-              get stats() {
-                return new ArgumentsField(schema.JSON, true);
-              },
-              get newStatus() {
-                return new ArgumentsField(schema.String, true);
-              },
-              get oldStatus() {
-                return new ArgumentsField(schema.String, true);
-              },
-              get locked() {
-                return new ArgumentsField(schema.Boolean, true);
-              },
-            }),
-            true
-          );
         },
         get executionByNodeId() {
           return new FieldNode(
@@ -621,10 +653,10 @@ export const schema = {
     return new InputNode(
       {
         get id() {
-          return new InputNodeField(schema.Int, true);
+          return new InputNodeField(schema.BigInt, true);
         },
         get taskId() {
-          return new InputNodeField(schema.Int, true);
+          return new InputNodeField(schema.BigInt, true);
         },
         get status() {
           return new InputNodeField(schema.String, true);
@@ -638,6 +670,12 @@ export const schema = {
       },
       { name: "ExecutionCondition" }
     );
+  },
+  get BigInt() {
+    return new ScalarNode({
+      name: "BigInt",
+      extension: ((extensions as any) || {}).BigInt,
+    });
   },
   get String() {
     return new ScalarNode({
@@ -688,16 +726,16 @@ export const schema = {
           return new FieldNode(schema.ID, undefined, false);
         },
         get id() {
-          return new FieldNode(schema.Int, undefined, false);
+          return new FieldNode(schema.BigInt, undefined, false);
         },
         get taskId() {
-          return new FieldNode(schema.Int, undefined, false);
+          return new FieldNode(schema.BigInt, undefined, false);
         },
         get status() {
-          return new FieldNode(schema.String, undefined, true);
+          return new FieldNode(schema.String, undefined, false);
         },
         get startedAt() {
-          return new FieldNode(schema.Datetime, undefined, true);
+          return new FieldNode(schema.Datetime, undefined, false);
         },
         get finishedAt() {
           return new FieldNode(schema.Datetime, undefined, true);
@@ -774,22 +812,25 @@ export const schema = {
           return new FieldNode(schema.ID, undefined, false);
         },
         get id() {
-          return new FieldNode(schema.Int, undefined, false);
+          return new FieldNode(schema.BigInt, undefined, false);
         },
         get parentId() {
-          return new FieldNode(schema.Int, undefined, true);
+          return new FieldNode(schema.BigInt, undefined, true);
         },
         get name() {
           return new FieldNode(schema.String, undefined, false);
         },
         get params() {
-          return new FieldNode(schema.JSON, undefined, true);
+          return new FieldNode(schema.JSON, undefined, false);
         },
         get context() {
-          return new FieldNode(schema.JSON, undefined, true);
+          return new FieldNode(schema.JSON, undefined, false);
         },
         get executeAt() {
           return new FieldNode(schema.Datetime, undefined, false);
+        },
+        get priority() {
+          return new FieldNode(schema.Int, undefined, false);
         },
         get locked() {
           return new FieldNode(schema.Boolean, undefined, false);
@@ -799,12 +840,6 @@ export const schema = {
         },
         get attempts() {
           return new FieldNode(schema.Int, undefined, false);
-        },
-        get childrenStats() {
-          return new FieldNode(schema.JSON, undefined, true);
-        },
-        get descendantsStats() {
-          return new FieldNode(schema.JSON, undefined, true);
         },
         get parent() {
           return new FieldNode(schema.Task, undefined, true);
@@ -859,6 +894,61 @@ export const schema = {
               },
               get condition() {
                 return new ArgumentsField(schema.TaskCondition, true);
+              },
+            }),
+            false
+          );
+        },
+        get taskStatsConnection() {
+          return new FieldNode(
+            schema.TaskStatsConnection,
+            new Arguments({
+              get first() {
+                return new ArgumentsField(schema.Int, true);
+              },
+              get last() {
+                return new ArgumentsField(schema.Int, true);
+              },
+              get offset() {
+                return new ArgumentsField(schema.Int, true);
+              },
+              get before() {
+                return new ArgumentsField(schema.Cursor, true);
+              },
+              get after() {
+                return new ArgumentsField(schema.Cursor, true);
+              },
+              get orderBy() {
+                return new ArgumentsField(
+                  new ArrayNode(schema.TaskStatsOrderBy, true),
+                  true
+                );
+              },
+              get condition() {
+                return new ArgumentsField(schema.TaskStatCondition, true);
+              },
+            }),
+            false
+          );
+        },
+        get taskStats() {
+          return new FieldNode(
+            new ArrayNode(schema.TaskStat, false),
+            new Arguments({
+              get first() {
+                return new ArgumentsField(schema.Int, true);
+              },
+              get offset() {
+                return new ArgumentsField(schema.Int, true);
+              },
+              get orderBy() {
+                return new ArgumentsField(
+                  new ArrayNode(schema.TaskStatsOrderBy, true),
+                  true
+                );
+              },
+              get condition() {
+                return new ArgumentsField(schema.TaskStatCondition, true);
               },
             }),
             false
@@ -919,6 +1009,12 @@ export const schema = {
             false
           );
         },
+        get childrenStats() {
+          return new FieldNode(schema.JSON, undefined, true);
+        },
+        get complete() {
+          return new FieldNode(schema.Boolean, undefined, true);
+        },
         get descendantTasksConnection() {
           return new FieldNode(
             schema.TasksConnection,
@@ -956,6 +1052,9 @@ export const schema = {
             true
           );
         },
+        get descendantsStats() {
+          return new FieldNode(schema.JSON, undefined, true);
+        },
         get lastExecuted() {
           return new FieldNode(schema.Datetime, undefined, true);
         },
@@ -985,10 +1084,10 @@ export const schema = {
     return new InputNode(
       {
         get id() {
-          return new InputNodeField(schema.Int, true);
+          return new InputNodeField(schema.BigInt, true);
         },
         get parentId() {
-          return new InputNodeField(schema.Int, true);
+          return new InputNodeField(schema.BigInt, true);
         },
         get name() {
           return new InputNodeField(schema.String, true);
@@ -1002,6 +1101,9 @@ export const schema = {
         get executeAt() {
           return new InputNodeField(schema.Datetime, true);
         },
+        get priority() {
+          return new InputNodeField(schema.Int, true);
+        },
         get locked() {
           return new InputNodeField(schema.Boolean, true);
         },
@@ -1010,12 +1112,6 @@ export const schema = {
         },
         get attempts() {
           return new InputNodeField(schema.Int, true);
-        },
-        get childrenStats() {
-          return new InputNodeField(schema.JSON, true);
-        },
-        get descendantsStats() {
-          return new InputNodeField(schema.JSON, true);
         },
       },
       { name: "TaskCondition" }
@@ -1083,6 +1179,132 @@ export const schema = {
       { name: "PageInfo", extension: ((extensions as any) || {}).PageInfo }
     );
   },
+  get TaskStatsOrderBy() {
+    return new EnumNode({ name: "TaskStatsOrderBy" });
+  },
+  get TaskStatCondition() {
+    return new InputNode(
+      {
+        get taskId() {
+          return new InputNodeField(schema.BigInt, true);
+        },
+        get collection() {
+          return new InputNodeField(schema.String, true);
+        },
+        get scheduled() {
+          return new InputNodeField(schema.Int, true);
+        },
+        get pending() {
+          return new InputNodeField(schema.Int, true);
+        },
+        get running() {
+          return new InputNodeField(schema.Int, true);
+        },
+        get failure() {
+          return new InputNodeField(schema.Int, true);
+        },
+        get timeout() {
+          return new InputNodeField(schema.Int, true);
+        },
+        get success() {
+          return new InputNodeField(schema.Int, true);
+        },
+        get locked() {
+          return new InputNodeField(schema.Int, true);
+        },
+        get total() {
+          return new InputNodeField(schema.Int, true);
+        },
+      },
+      { name: "TaskStatCondition" }
+    );
+  },
+  get TaskStatsConnection() {
+    return new ObjectNode(
+      {
+        get nodes() {
+          return new FieldNode(
+            new ArrayNode(schema.TaskStat, false),
+            undefined,
+            false
+          );
+        },
+        get edges() {
+          return new FieldNode(
+            new ArrayNode(schema.TaskStatsEdge, false),
+            undefined,
+            false
+          );
+        },
+        get pageInfo() {
+          return new FieldNode(schema.PageInfo, undefined, false);
+        },
+        get totalCount() {
+          return new FieldNode(schema.Int, undefined, false);
+        },
+      },
+      {
+        name: "TaskStatsConnection",
+        extension: ((extensions as any) || {}).TaskStatsConnection,
+      }
+    );
+  },
+  get TaskStat() {
+    return new ObjectNode(
+      {
+        get taskId() {
+          return new FieldNode(schema.BigInt, undefined, true);
+        },
+        get collection() {
+          return new FieldNode(schema.String, undefined, false);
+        },
+        get scheduled() {
+          return new FieldNode(schema.Int, undefined, false);
+        },
+        get pending() {
+          return new FieldNode(schema.Int, undefined, false);
+        },
+        get running() {
+          return new FieldNode(schema.Int, undefined, false);
+        },
+        get failure() {
+          return new FieldNode(schema.Int, undefined, false);
+        },
+        get timeout() {
+          return new FieldNode(schema.Int, undefined, false);
+        },
+        get success() {
+          return new FieldNode(schema.Int, undefined, false);
+        },
+        get locked() {
+          return new FieldNode(schema.Int, undefined, false);
+        },
+        get total() {
+          return new FieldNode(schema.Int, undefined, false);
+        },
+        get task() {
+          return new FieldNode(schema.Task, undefined, true);
+        },
+      },
+      { name: "TaskStat", extension: ((extensions as any) || {}).TaskStat }
+    );
+  },
+  get TaskStatsEdge() {
+    return new ObjectNode(
+      {
+        get cursor() {
+          return new FieldNode(schema.Cursor, undefined, true);
+        },
+        get node() {
+          return new FieldNode(schema.TaskStat, undefined, true);
+        },
+      },
+      {
+        name: "TaskStatsEdge",
+        extension: ((extensions as any) || {}).TaskStatsEdge,
+      }
+    );
+  },
   get LogsOrderBy() {
     return new EnumNode({ name: "LogsOrderBy" });
   },
@@ -1090,10 +1312,10 @@ export const schema = {
     return new InputNode(
       {
         get id() {
-          return new InputNodeField(schema.Int, true);
+          return new InputNodeField(schema.BigInt, true);
         },
         get executionId() {
-          return new InputNodeField(schema.Int, true);
+          return new InputNodeField(schema.BigInt, true);
         },
         get time() {
           return new InputNodeField(schema.Datetime, true);
@@ -1142,13 +1364,13 @@ export const schema = {
           return new FieldNode(schema.ID, undefined, false);
         },
         get id() {
-          return new FieldNode(schema.Int, undefined, false);
+          return new FieldNode(schema.BigInt, undefined, false);
         },
         get executionId() {
-          return new FieldNode(schema.Int, undefined, false);
+          return new FieldNode(schema.BigInt, undefined, false);
         },
         get time() {
-          return new FieldNode(schema.Datetime, undefined, true);
+          return new FieldNode(schema.Datetime, undefined, false);
         },
         get message() {
           return new FieldNode(schema.JSON, undefined, true);
@@ -1327,6 +1549,20 @@ export const schema = {
             true
           );
         },
+        get createTaskStat() {
+          return new FieldNode(
+            schema.CreateTaskStatPayload,
+            new Arguments(
+              {
+                get input() {
+                  return new ArgumentsField(schema.CreateTaskStatInput, false);
+                },
+              },
+              true
+            ),
+            true
+          );
+        },
         get createTask() {
           return new FieldNode(
             schema.CreateTaskPayload,
@@ -1451,6 +1687,23 @@ export const schema = {
             true
           );
         },
+        get updateTaskStatByTaskIdAndCollection() {
+          return new FieldNode(
+            schema.UpdateTaskStatPayload,
+            new Arguments(
+              {
+                get input() {
+                  return new ArgumentsField(
+                    schema.UpdateTaskStatByTaskIdAndCollectionInput,
+                    false
+                  );
+                },
+              },
+              true
+            ),
+            true
+          );
+        },
         get updateTaskByNodeId() {
           return new FieldNode(
             schema.UpdateTaskPayload,
@@ -1482,14 +1735,14 @@ export const schema = {
             true
           );
         },
-        get updateTaskByNameAndParentIdAndParamsAndContextAndExecuteAt() {
+        get updateTaskByNameAndParamsAndContextAndExecuteAt() {
           return new FieldNode(
             schema.UpdateTaskPayload,
             new Arguments(
               {
                 get input() {
                   return new ArgumentsField(
-                    schema.UpdateTaskByNameAndParentIdAndParamsAndContextAndExecuteAtInput,
+                    schema.UpdateTaskByNameAndParamsAndContextAndExecuteAtInput,
                     false
                   );
                 },
@@ -1609,6 +1862,23 @@ export const schema = {
             true
           );
         },
+        get deleteTaskStatByTaskIdAndCollection() {
+          return new FieldNode(
+            schema.DeleteTaskStatPayload,
+            new Arguments(
+              {
+                get input() {
+                  return new ArgumentsField(
+                    schema.DeleteTaskStatByTaskIdAndCollectionInput,
+                    false
+                  );
+                },
+              },
+              true
+            ),
+            true
+          );
+        },
         get deleteTaskByNodeId() {
           return new FieldNode(
             schema.DeleteTaskPayload,
@@ -1640,16 +1910,44 @@ export const schema = {
             true
           );
         },
-        get deleteTaskByNameAndParentIdAndParamsAndContextAndExecuteAt() {
+        get deleteTaskByNameAndParamsAndContextAndExecuteAt() {
           return new FieldNode(
             schema.DeleteTaskPayload,
             new Arguments(
               {
                 get input() {
                   return new ArgumentsField(
-                    schema.DeleteTaskByNameAndParentIdAndParamsAndContextAndExecuteAtInput,
+                    schema.DeleteTaskByNameAndParamsAndContextAndExecuteAtInput,
                     false
                   );
+                },
+              },
+              true
+            ),
+            true
+          );
+        },
+        get executeTask() {
+          return new FieldNode(
+            schema.ExecuteTaskPayload,
+            new Arguments(
+              {
+                get input() {
+                  return new ArgumentsField(schema.ExecuteTaskInput, false);
+                },
+              },
+              true
+            ),
+            true
+          );
+        },
+        get incTaskStat() {
+          return new FieldNode(
+            schema.IncTaskStatPayload,
+            new Arguments(
+              {
+                get input() {
+                  return new ArgumentsField(schema.IncTaskStatInput, false);
                 },
               },
               true
@@ -1664,23 +1962,6 @@ export const schema = {
               {
                 get input() {
                   return new ArgumentsField(schema.ProcessNextTaskInput, false);
-                },
-              },
-              true
-            ),
-            true
-          );
-        },
-        get updateAncestorTasksDescendantsStats() {
-          return new FieldNode(
-            schema.UpdateAncestorTasksDescendantsStatsPayload,
-            new Arguments(
-              {
-                get input() {
-                  return new ArgumentsField(
-                    schema.UpdateAncestorTasksDescendantsStatsInput,
-                    false
-                  );
                 },
               },
               true
@@ -1705,16 +1986,13 @@ export const schema = {
             true
           );
         },
-        get updateParentTaskChildrenStats() {
+        get updateStats() {
           return new FieldNode(
-            schema.UpdateParentTaskChildrenStatsPayload,
+            schema.UpdateStatsPayload,
             new Arguments(
               {
                 get input() {
-                  return new ArgumentsField(
-                    schema.UpdateParentTaskChildrenStatsInput,
-                    false
-                  );
+                  return new ArgumentsField(schema.UpdateStatsInput, false);
                 },
               },
               true
@@ -1743,10 +2021,10 @@ export const schema = {
     return new InputNode(
       {
         get id() {
-          return new InputNodeField(schema.Int, true);
+          return new InputNodeField(schema.BigInt, true);
         },
         get taskId() {
-          return new InputNodeField(schema.Int, false);
+          return new InputNodeField(schema.BigInt, false);
         },
         get status() {
           return new InputNodeField(schema.String, true);
@@ -1814,10 +2092,10 @@ export const schema = {
     return new InputNode(
       {
         get id() {
-          return new InputNodeField(schema.Int, true);
+          return new InputNodeField(schema.BigInt, true);
         },
         get executionId() {
-          return new InputNodeField(schema.Int, false);
+          return new InputNodeField(schema.BigInt, false);
         },
         get time() {
           return new InputNodeField(schema.Datetime, true);
@@ -1930,6 +2208,92 @@ export const schema = {
       }
     );
   },
+  get CreateTaskStatInput() {
+    return new InputNode(
+      {
+        get clientMutationId() {
+          return new InputNodeField(schema.String, true);
+        },
+        get taskStat() {
+          return new InputNodeField(schema.TaskStatInput, false);
+        },
+      },
+      { name: "CreateTaskStatInput" }
+    );
+  },
+  get TaskStatInput() {
+    return new InputNode(
+      {
+        get taskId() {
+          return new InputNodeField(schema.BigInt, true);
+        },
+        get collection() {
+          return new InputNodeField(schema.String, false);
+        },
+        get scheduled() {
+          return new InputNodeField(schema.Int, true);
+        },
+        get pending() {
+          return new InputNodeField(schema.Int, true);
+        },
+        get running() {
+          return new InputNodeField(schema.Int, true);
+        },
+        get failure() {
+          return new InputNodeField(schema.Int, true);
+        },
+        get timeout() {
+          return new InputNodeField(schema.Int, true);
+        },
+        get success() {
+          return new InputNodeField(schema.Int, true);
+        },
+        get locked() {
+          return new InputNodeField(schema.Int, true);
+        },
+        get total() {
+          return new InputNodeField(schema.Int, true);
+        },
+      },
+      { name: "TaskStatInput" }
+    );
+  },
+  get CreateTaskStatPayload() {
+    return new ObjectNode(
+      {
+        get clientMutationId() {
+          return new FieldNode(schema.String, undefined, true);
+        },
+        get taskStat() {
+          return new FieldNode(schema.TaskStat, undefined, true);
+        },
+        get query() {
+          return new FieldNode(schema.Query, undefined, true);
+        },
+        get task() {
+          return new FieldNode(schema.Task, undefined, true);
+        },
+        get taskStatEdge() {
+          return new FieldNode(
+            schema.TaskStatsEdge,
+            new Arguments({
+              get orderBy() {
+                return new ArgumentsField(
+                  new ArrayNode(schema.TaskStatsOrderBy, true),
+                  true
+                );
+              },
+            }),
+            true
+          );
+        },
+      },
+      {
+        name: "CreateTaskStatPayload",
+        extension: ((extensions as any) || {}).CreateTaskStatPayload,
+      }
+    );
+  },
   get CreateTaskInput() {
     return new InputNode(
       {
@@ -1947,10 +2311,10 @@ export const schema = {
     return new InputNode(
       {
         get id() {
-          return new InputNodeField(schema.Int, true);
+          return new InputNodeField(schema.BigInt, true);
         },
         get parentId() {
-          return new InputNodeField(schema.Int, true);
+          return new InputNodeField(schema.BigInt, true);
         },
         get name() {
           return new InputNodeField(schema.String, false);
@@ -1964,6 +2328,9 @@ export const schema = {
         get executeAt() {
           return new InputNodeField(schema.Datetime, true);
         },
+        get priority() {
+          return new InputNodeField(schema.Int, true);
+        },
         get locked() {
           return new InputNodeField(schema.Boolean, true);
         },
@@ -1972,12 +2339,6 @@ export const schema = {
         },
         get attempts() {
           return new InputNodeField(schema.Int, true);
-        },
-        get childrenStats() {
-          return new InputNodeField(schema.JSON, true);
-        },
-        get descendantsStats() {
-          return new InputNodeField(schema.JSON, true);
         },
       },
       { name: "TaskInput" }
@@ -2039,10 +2400,10 @@ export const schema = {
     return new InputNode(
       {
         get id() {
-          return new InputNodeField(schema.Int, true);
+          return new InputNodeField(schema.BigInt, true);
         },
         get taskId() {
-          return new InputNodeField(schema.Int, true);
+          return new InputNodeField(schema.BigInt, true);
         },
         get status() {
           return new InputNodeField(schema.String, true);
@@ -2103,7 +2464,7 @@ export const schema = {
           return new InputNodeField(schema.ExecutionPatch, false);
         },
         get id() {
-          return new InputNodeField(schema.Int, false);
+          return new InputNodeField(schema.BigInt, false);
         },
       },
       { name: "UpdateExecutionInput" }
@@ -2129,10 +2490,10 @@ export const schema = {
     return new InputNode(
       {
         get id() {
-          return new InputNodeField(schema.Int, true);
+          return new InputNodeField(schema.BigInt, true);
         },
         get executionId() {
-          return new InputNodeField(schema.Int, true);
+          return new InputNodeField(schema.BigInt, true);
         },
         get time() {
           return new InputNodeField(schema.Datetime, true);
@@ -2190,7 +2551,7 @@ export const schema = {
           return new InputNodeField(schema.LogPatch, false);
         },
         get id() {
-          return new InputNodeField(schema.Int, false);
+          return new InputNodeField(schema.BigInt, false);
         },
       },
       { name: "UpdateLogInput" }
@@ -2296,6 +2657,98 @@ export const schema = {
       { name: "UpdateMigrationByNameInput" }
     );
   },
+  get UpdateTaskStatByTaskIdAndCollectionInput() {
+    return new InputNode(
+      {
+        get clientMutationId() {
+          return new InputNodeField(schema.String, true);
+        },
+        get patch() {
+          return new InputNodeField(schema.TaskStatPatch, false);
+        },
+        get taskId() {
+          return new InputNodeField(schema.BigInt, false);
+        },
+        get collection() {
+          return new InputNodeField(schema.String, false);
+        },
+      },
+      { name: "UpdateTaskStatByTaskIdAndCollectionInput" }
+    );
+  },
+  get TaskStatPatch() {
+    return new InputNode(
+      {
+        get taskId() {
+          return new InputNodeField(schema.BigInt, true);
+        },
+        get collection() {
+          return new InputNodeField(schema.String, true);
+        },
+        get scheduled() {
+          return new InputNodeField(schema.Int, true);
+        },
+        get pending() {
+          return new InputNodeField(schema.Int, true);
+        },
+        get running() {
+          return new InputNodeField(schema.Int, true);
+        },
+        get failure() {
+          return new InputNodeField(schema.Int, true);
+        },
+        get timeout() {
+          return new InputNodeField(schema.Int, true);
+        },
+        get success() {
+          return new InputNodeField(schema.Int, true);
+        },
+        get locked() {
+          return new InputNodeField(schema.Int, true);
+        },
+        get total() {
+          return new InputNodeField(schema.Int, true);
+        },
+      },
+      { name: "TaskStatPatch" }
+    );
+  },
+  get UpdateTaskStatPayload() {
+    return new ObjectNode(
+      {
+        get clientMutationId() {
+          return new FieldNode(schema.String, undefined, true);
+        },
+        get taskStat() {
+          return new FieldNode(schema.TaskStat, undefined, true);
+        },
+        get query() {
+          return new FieldNode(schema.Query, undefined, true);
+        },
+        get task() {
+          return new FieldNode(schema.Task, undefined, true);
+        },
+        get taskStatEdge() {
+          return new FieldNode(
+            schema.TaskStatsEdge,
+            new Arguments({
+              get orderBy() {
+                return new ArgumentsField(
+                  new ArrayNode(schema.TaskStatsOrderBy, true),
+                  true
+                );
+              },
+            }),
+            true
+          );
+        },
+      },
+      {
+        name: "UpdateTaskStatPayload",
+        extension: ((extensions as any) || {}).UpdateTaskStatPayload,
+      }
+    );
+  },
   get UpdateTaskByNodeIdInput() {
     return new InputNode(
       {
@@ -2316,10 +2769,10 @@ export const schema = {
     return new InputNode(
       {
         get id() {
-          return new InputNodeField(schema.Int, true);
+          return new InputNodeField(schema.BigInt, true);
         },
         get parentId() {
-          return new InputNodeField(schema.Int, true);
+          return new InputNodeField(schema.BigInt, true);
         },
         get name() {
           return new InputNodeField(schema.String, true);
@@ -2333,6 +2786,9 @@ export const schema = {
         get executeAt() {
           return new InputNodeField(schema.Datetime, true);
         },
+        get priority() {
+          return new InputNodeField(schema.Int, true);
+        },
         get locked() {
           return new InputNodeField(schema.Boolean, true);
         },
@@ -2341,12 +2797,6 @@ export const schema = {
         },
         get attempts() {
           return new InputNodeField(schema.Int, true);
-        },
-        get childrenStats() {
-          return new InputNodeField(schema.JSON, true);
-        },
-        get descendantsStats() {
-          return new InputNodeField(schema.JSON, true);
         },
       },
       { name: "TaskPatch" }
@@ -2398,13 +2848,13 @@ export const schema = {
           return new InputNodeField(schema.TaskPatch, false);
         },
         get id() {
-          return new InputNodeField(schema.Int, false);
+          return new InputNodeField(schema.BigInt, false);
         },
       },
       { name: "UpdateTaskInput" }
     );
   },
-  get UpdateTaskByNameAndParentIdAndParamsAndContextAndExecuteAtInput() {
+  get UpdateTaskByNameAndParamsAndContextAndExecuteAtInput() {
     return new InputNode(
       {
         get clientMutationId() {
@@ -2416,9 +2866,6 @@ export const schema = {
         get name() {
           return new InputNodeField(schema.String, false);
         },
-        get parentId() {
-          return new InputNodeField(schema.Int, false);
-        },
         get params() {
           return new InputNodeField(schema.JSON, false);
         },
@@ -2429,9 +2876,7 @@ export const schema = {
           return new InputNodeField(schema.Datetime, false);
         },
       },
-      {
-        name: "UpdateTaskByNameAndParentIdAndParamsAndContextAndExecuteAtInput",
-      }
+      { name: "UpdateTaskByNameAndParamsAndContextAndExecuteAtInput" }
     );
   },
   get DeleteExecutionByNodeIdInput() {
@@ -2493,7 +2938,7 @@ export const schema = {
           return new InputNodeField(schema.String, true);
         },
         get id() {
-          return new InputNodeField(schema.Int, false);
+          return new InputNodeField(schema.BigInt, false);
         },
       },
       { name: "DeleteExecutionInput" }
@@ -2558,7 +3003,7 @@ export const schema = {
           return new InputNodeField(schema.String, true);
         },
         get id() {
-          return new InputNodeField(schema.Int, false);
+          return new InputNodeField(schema.BigInt, false);
         },
       },
       { name: "DeleteLogInput" }
@@ -2639,6 +3084,61 @@ export const schema = {
       { name: "DeleteMigrationByNameInput" }
     );
   },
+  get DeleteTaskStatByTaskIdAndCollectionInput() {
+    return new InputNode(
+      {
+        get clientMutationId() {
+          return new InputNodeField(schema.String, true);
+        },
+        get taskId() {
+          return new InputNodeField(schema.BigInt, false);
+        },
+        get collection() {
+          return new InputNodeField(schema.String, false);
+        },
+      },
+      { name: "DeleteTaskStatByTaskIdAndCollectionInput" }
+    );
+  },
+  get DeleteTaskStatPayload() {
+    return new ObjectNode(
+      {
+        get clientMutationId() {
+          return new FieldNode(schema.String, undefined, true);
+        },
+        get taskStat() {
+          return new FieldNode(schema.TaskStat, undefined, true);
+        },
+        get deletedTaskStatNodeId() {
+          return new FieldNode(schema.ID, undefined, true);
+        },
+        get query() {
+          return new FieldNode(schema.Query, undefined, true);
+        },
+        get task() {
+          return new FieldNode(schema.Task, undefined, true);
+        },
+        get taskStatEdge() {
+          return new FieldNode(
+            schema.TaskStatsEdge,
+            new Arguments({
+              get orderBy() {
+                return new ArgumentsField(
+                  new ArrayNode(schema.TaskStatsOrderBy, true),
+                  true
+                );
+              },
+            }),
+            true
+          );
+        },
+      },
+      {
+        name: "DeleteTaskStatPayload",
+        extension: ((extensions as any) || {}).DeleteTaskStatPayload,
+      }
+    );
+  },
   get DeleteTaskByNodeIdInput() {
     return new InputNode(
       {
@@ -2698,13 +3198,13 @@ export const schema = {
           return new InputNodeField(schema.String, true);
         },
         get id() {
-          return new InputNodeField(schema.Int, false);
+          return new InputNodeField(schema.BigInt, false);
         },
       },
       { name: "DeleteTaskInput" }
     );
   },
-  get DeleteTaskByNameAndParentIdAndParamsAndContextAndExecuteAtInput() {
+  get DeleteTaskByNameAndParamsAndContextAndExecuteAtInput() {
     return new InputNode(
       {
         get clientMutationId() {
@@ -2712,9 +3212,6 @@ export const schema = {
         },
         get name() {
           return new InputNodeField(schema.String, false);
-        },
-        get parentId() {
-          return new InputNodeField(schema.Int, false);
         },
         get params() {
           return new InputNodeField(schema.JSON, false);
@@ -2726,8 +3223,93 @@ export const schema = {
           return new InputNodeField(schema.Datetime, false);
         },
       },
+      { name: "DeleteTaskByNameAndParamsAndContextAndExecuteAtInput" }
+    );
+  },
+  get ExecuteTaskInput() {
+    return new InputNode(
       {
-        name: "DeleteTaskByNameAndParentIdAndParamsAndContextAndExecuteAtInput",
+        get clientMutationId() {
+          return new InputNodeField(schema.String, true);
+        },
+        get taskId() {
+          return new InputNodeField(schema.Int, true);
+        },
+      },
+      { name: "ExecuteTaskInput" }
+    );
+  },
+  get ExecuteTaskPayload() {
+    return new ObjectNode(
+      {
+        get clientMutationId() {
+          return new FieldNode(schema.String, undefined, true);
+        },
+        get execution() {
+          return new FieldNode(schema.Execution, undefined, true);
+        },
+        get query() {
+          return new FieldNode(schema.Query, undefined, true);
+        },
+        get task() {
+          return new FieldNode(schema.Task, undefined, true);
+        },
+        get executionEdge() {
+          return new FieldNode(
+            schema.ExecutionsEdge,
+            new Arguments({
+              get orderBy() {
+                return new ArgumentsField(
+                  new ArrayNode(schema.ExecutionsOrderBy, true),
+                  true
+                );
+              },
+            }),
+            true
+          );
+        },
+      },
+      {
+        name: "ExecuteTaskPayload",
+        extension: ((extensions as any) || {}).ExecuteTaskPayload,
+      }
+    );
+  },
+  get IncTaskStatInput() {
+    return new InputNode(
+      {
+        get clientMutationId() {
+          return new InputNodeField(schema.String, true);
+        },
+        get taskId() {
+          return new InputNodeField(schema.BigInt, true);
+        },
+        get collection() {
+          return new InputNodeField(schema.String, true);
+        },
+        get colName() {
+          return new InputNodeField(schema.String, true);
+        },
+        get value() {
+          return new InputNodeField(schema.Int, true);
+        },
+      },
+      { name: "IncTaskStatInput" }
+    );
+  },
+  get IncTaskStatPayload() {
+    return new ObjectNode(
+      {
+        get clientMutationId() {
+          return new FieldNode(schema.String, undefined, true);
+        },
+        get query() {
+          return new FieldNode(schema.Query, undefined, true);
+        },
+      },
+      {
+        name: "IncTaskStatPayload",
+        extension: ((extensions as any) || {}).IncTaskStatPayload,
       }
     );
   },
@@ -2811,7 +3393,7 @@ export const schema = {
     return new ObjectNode(
       {
         get executionId() {
-          return new FieldNode(schema.Int, undefined, true);
+          return new FieldNode(schema.BigInt, undefined, true);
         },
         get taskName() {
           return new FieldNode(schema.String, undefined, true);
@@ -2820,45 +3402,6 @@ export const schema = {
       {
         name: "ProcessNextTaskRecord",
         extension: ((extensions as any) || {}).ProcessNextTaskRecord,
-      }
-    );
-  },
-  get UpdateAncestorTasksDescendantsStatsInput() {
-    return new InputNode(
-      {
-        get clientMutationId() {
-          return new InputNodeField(schema.String, true);
-        },
-        get parentTaskId() {
-          return new InputNodeField(schema.Int, true);
-        },
-        get newStatus() {
-          return new InputNodeField(schema.String, true);
-        },
-        get oldStatus() {
-          return new InputNodeField(schema.String, true);
-        },
-        get locked() {
-          return new InputNodeField(schema.Boolean, true);
-        },
-      },
-      { name: "UpdateAncestorTasksDescendantsStatsInput" }
-    );
-  },
-  get UpdateAncestorTasksDescendantsStatsPayload() {
-    return new ObjectNode(
-      {
-        get clientMutationId() {
-          return new FieldNode(schema.String, undefined, true);
-        },
-        get query() {
-          return new FieldNode(schema.Query, undefined, true);
-        },
-      },
-      {
-        name: "UpdateAncestorTasksDescendantsStatsPayload",
-        extension: ((extensions as any) || {})
-          .UpdateAncestorTasksDescendantsStatsPayload,
       }
     );
   },
@@ -2872,10 +3415,10 @@ export const schema = {
           return new InputNodeField(schema.String, true);
         },
         get executionId() {
-          return new InputNodeField(schema.Int, true);
+          return new InputNodeField(schema.BigInt, true);
         },
         get taskId() {
-          return new InputNodeField(schema.Int, true);
+          return new InputNodeField(schema.BigInt, true);
         },
         get maxAttempts() {
           return new InputNodeField(schema.Int, true);
@@ -2920,29 +3463,35 @@ export const schema = {
       }
     );
   },
-  get UpdateParentTaskChildrenStatsInput() {
+  get UpdateStatsInput() {
     return new InputNode(
       {
         get clientMutationId() {
           return new InputNodeField(schema.String, true);
         },
-        get parentTaskId() {
-          return new InputNodeField(schema.Int, true);
-        },
-        get newStatus() {
+        get op() {
           return new InputNodeField(schema.String, true);
         },
-        get oldStatus() {
+        get arg() {
           return new InputNodeField(schema.String, true);
         },
-        get locked() {
+        get old() {
+          return new InputNodeField(schema.TaskInput, true);
+        },
+        get new() {
+          return new InputNodeField(schema.TaskInput, true);
+        },
+        get collection() {
+          return new InputNodeField(schema.String, true);
+        },
+        get recurse() {
           return new InputNodeField(schema.Boolean, true);
         },
       },
-      { name: "UpdateParentTaskChildrenStatsInput" }
+      { name: "UpdateStatsInput" }
     );
   },
-  get UpdateParentTaskChildrenStatsPayload() {
+  get UpdateStatsPayload() {
     return new ObjectNode(
       {
         get clientMutationId() {
@@ -2953,9 +3502,8 @@ export const schema = {
         },
       },
       {
-        name: "UpdateParentTaskChildrenStatsPayload",
-        extension: ((extensions as any) || {})
-          .UpdateParentTaskChildrenStatsPayload,
+        name: "UpdateStatsPayload",
+        extension: ((extensions as any) || {}).UpdateStatsPayload,
       }
     );
   },
