@@ -6,7 +6,6 @@ import { Tasks } from "./tasks";
 import { Logs } from "./logs";
 import { Info } from "./info";
 import { H1, Input } from "@djgrant/components";
-
 import * as loading from "./loading";
 
 export const App = () => (

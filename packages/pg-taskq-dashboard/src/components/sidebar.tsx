@@ -19,7 +19,7 @@ export const counts = {
 export const Sidebar = () => (
   <Match<{ taskId: string }> path="./tasks/:taskId/*">
     {({ match }) => {
-      const taskId = match?.taskId ? Number(match.taskId) || null : null;
+      const taskId = match?.taskId === "root" ? null : match?.taskId || null;
       return (
         <div className="space-y-4">
           <h3 className="flex items-center justify-between mt-1 mb-6 ml-6 text-xl font-medium text-pink-600 font-heading">
@@ -66,7 +66,7 @@ export const Sidebar = () => (
 
 interface LiveCountProps {
   field: string;
-  taskId: number | null;
+  taskId: string | null;
 }
 
 const LiveCount = observer(
@@ -96,12 +96,12 @@ const trimName = (str: string) => {
   return str;
 };
 
-const TaskName = graphql(({ taskId }: { taskId: number | null }) => {
+const TaskName = graphql(({ taskId }: { taskId: string | null }) => {
   if (!taskId) return "Root tasks";
   return trimName(query.task({ id: taskId })?.name || "");
 });
 
-const UpButton = graphql(({ taskId }: { taskId: number | null }) => {
+const UpButton = graphql(({ taskId }: { taskId: string | null }) => {
   if (!taskId) return null;
   const parentId = query.task({ id: taskId })?.parentId;
   return (

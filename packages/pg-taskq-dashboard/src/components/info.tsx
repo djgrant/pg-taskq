@@ -8,6 +8,7 @@ import dayjs from "dayjs";
 type InfoProps = RouteComponentProps<{ taskId: string }>;
 
 export const Info: React.FC<InfoProps> = graphql(({ taskId }) => {
+  console.log(typeof taskId);
   const task = query.task({ id: taskId });
   usePoll(task, 5000);
 

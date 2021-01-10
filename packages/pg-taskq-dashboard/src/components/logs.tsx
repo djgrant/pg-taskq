@@ -7,7 +7,7 @@ import dayjs from "dayjs";
 type LogsProps = RouteComponentProps<{ taskId: string }>;
 
 export const LogsInner: React.FC<LogsProps> = graphql(({ taskId }) => {
-  const task = query.task({ id: Number(taskId) });
+  const task = query.task({ id: taskId });
   usePoll(task, 1000);
 
   const logs = task?.latestExecution?.logs;
@@ -33,7 +33,7 @@ export const LogsInner: React.FC<LogsProps> = graphql(({ taskId }) => {
   );
 });
 
-export const Logs: React.FC<LogsProps> = props => (
+export const Logs: React.FC<LogsProps> = (props) => (
   <Suspense fallback={<div className="text-gray-700">No logs</div>}>
     <LogsInner {...props} />
   </Suspense>
