@@ -70,6 +70,7 @@ declare module "@djgrant/pg-taskq" {
     maxAttempts: number;
     backoffDelay: string;
     backoffDecay: string;
+    processQueueEvery: number;
     timeout: string;
     dependencies: (opts: ExecuteParams<{}>) => Promise<Deps>;
   }
