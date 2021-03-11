@@ -57,7 +57,7 @@ const insertTaskToExecuteAtDateTime = ({
 }) => sql`
     INSERT INTO tasks (name, params, context, parent_id, execute_at, priority) 
     VALUES (${name}, ${params}, ${context}, ${parentId}, ${executeAtDateTime}, ${priority})
-    ON CONFLICT ON CONSTRAINT tasks_unique_key DO NOTHING
+    ON CONFLICT (name, execute_at, md5(params::text), md5(context::text)) DO NOTHING
     RETURNING *;
 `;
 
@@ -71,7 +71,7 @@ const insertTaskToExecuteIn = ({
 }) => sql`
     INSERT INTO tasks (name, params, context, parent_id, execute_at, priority) 
     VALUES (${name}, ${params}, ${context}, ${parentId}, now() + ${executeIn}::interval, ${priority})
-    ON CONFLICT ON CONSTRAINT tasks_unique_key DO NOTHING
+    ON CONFLICT (name, execute_at, md5(params::text), md5(context::text)) DO NOTHING
     RETURNING *;
 `;
 
@@ -85,7 +85,7 @@ const insertTaskToExecuteInSumOf = ({
 }) => sql`
     INSERT INTO tasks (name, params, context, parent_id, execute_at, priority) 
     VALUES (${name}, ${params}, ${context}, ${parentId}, ${datetime}::timestamp with time zone + ${interval}::interval, ${priority})
-    ON CONFLICT ON CONSTRAINT tasks_unique_key DO NOTHING
+    ON CONFLICT (name, execute_at, md5(params::text), md5(context::text)) DO NOTHING
     RETURNING *;
 `;
 

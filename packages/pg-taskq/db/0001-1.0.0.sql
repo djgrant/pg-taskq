@@ -8,9 +8,11 @@ create table tasks (
 	priority integer not null default 0,
 	locked boolean not null default false,
 	status varchar not null,
-	attempts integer not null default 0,
-	constraint tasks_unique_key unique (name, params, context, execute_at)
+	attempts integer not null default 0
 );
+
+create unique index tasks_unique_key on tasks
+using btree (name, execute_at, md5(params::text), md5(context::text));
 
 create table task_stats (
 	task_id bigint references tasks(id) on delete cascade,
