@@ -406,7 +406,7 @@ $$ language plpgsql volatile;
 
 -- force execute --
 
-create function execute_task(task_id integer) returns executions as $$
+create function execute_task(task_id bigint) returns executions as $$
 	insert into executions (task_id) values (task_id) returning *;
 $$ language sql volatile;
 
