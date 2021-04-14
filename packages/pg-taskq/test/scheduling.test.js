@@ -114,12 +114,12 @@ test("tasks are run in priority order", (done) => {
 
   taskq.enqueue({
     name: "Regular priority task",
-    priority: 1,
+    priority: 0,
   });
 
   taskq.enqueue({
     name: "High priority task",
-    priority: 0,
+    priority: 1,
   });
 
   taskq.take("High priority task", highPriorityTaskMock);
@@ -136,13 +136,13 @@ test("priority takes precendence over time", (done) => {
 
   taskq.enqueue({
     name: "Low priority task",
-    priority: 1,
+    priority: 0,
     executeAt: "00:00",
   });
 
   taskq.enqueue({
     name: "High priority task",
-    priority: 0,
+    priority: 1,
     executeAt: "00:01",
   });
 

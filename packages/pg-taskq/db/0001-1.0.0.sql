@@ -50,7 +50,7 @@ create index on executions (task_id, started_at desc);
 create index on tasks (id, parent_id);
 create index on tasks (execute_at desc);
 create index on tasks (execute_at asc);
-create index on tasks (priority asc);
+create index on tasks (priority desc);
 create index on tasks (status);
 create index on task_stats (task_id, collection);
 create index on logs (execution_id, time);
@@ -386,7 +386,7 @@ begin
 			tasks_last_executed(t) + (backoff_delay * t.attempts) < now()
 		end
 	)
-	order by t.priority asc, t.execute_at asc
+	order by t.priority desc, t.execute_at asc
 	limit 1
 	for update skip locked;
 
