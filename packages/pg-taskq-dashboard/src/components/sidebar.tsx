@@ -1,10 +1,10 @@
 import React, { Suspense } from "react";
 import { Link, Match } from "@reach/router";
 import { Badge, H6, Label, Input, Tabs, Tab } from "@djgrant/components";
-import { graphql, usePoll } from "@gqless/react";
 import { observer } from "mobx-react";
-import { query } from "../graphql";
+import { useQuery } from "../gqless";
 import { Up } from "./icons";
+import { searchFrom } from "../observables";
 
 export const counts = {
   total: { label: "All", color: "blue" },
@@ -69,25 +69,23 @@ interface LiveCountProps {
   taskId: string | null;
 }
 
-const LiveCount = observer(
-  graphql(({ taskId, field }: LiveCountProps) => {
-    let stats;
-    const { descendants } = query.local.searchForm;
+const LiveCount = observer(({ taskId, field }: LiveCountProps) => {
+  const query = useQuery();
+  let stats;
+  const { descendants } = searchFrom;
 
-    if (taskId !== null) {
-      const statsQuery =
-        descendants === "all" ? "descendantsStats" : "childrenStats";
-      stats = query.task({ id: taskId })![statsQuery];
-    } else {
-      const statsQuery =
-        descendants === "all" ? "rootDescendantsStats" : "rootChildrenStats";
-      stats = query[statsQuery];
-    }
+  if (taskId !== null) {
+    const statsQuery =
+      descendants === "all" ? "descendantsStats" : "childrenStats";
+    stats = query.task({ id: taskId })![statsQuery];
+  } else {
+    const statsQuery =
+      descendants === "all" ? "rootDescendantsStats" : "rootChildrenStats";
+    stats = query[statsQuery];
+  }
 
-    usePoll(stats, 5000);
-    return stats ? stats[field] : 0;
-  })
-);
+  return stats ? stats[field] : 0;
+});
 
 const trimName = (str: string) => {
   if (str.length > 18) {
@@ -96,12 +94,14 @@ const trimName = (str: string) => {
   return str;
 };
 
-const TaskName = graphql(({ taskId }: { taskId: string | null }) => {
-  if (!taskId) return "Root tasks";
-  return trimName(query.task({ id: taskId })?.name || "");
-});
+const TaskName = ({ taskId }: { taskId: string | null }) => {
+  const query = useQuery();
+  if (!taskId) return <>Root tasks</>;
+  return <>{trimName(query.task({ id: taskId })?.name || "")}</>;
+};
 
-const UpButton = graphql(({ taskId }: { taskId: string | null }) => {
+const UpButton = ({ taskId }: { taskId: string | null }) => {
+  const query = useQuery();
   if (!taskId) return null;
   const parentId = query.task({ id: taskId })?.parentId;
   return (
@@ -109,10 +109,9 @@ const UpButton = graphql(({ taskId }: { taskId: string | null }) => {
       <Up className="w-6 h-6" />
     </Link>
   );
-});
+};
 
 const DescendantsForm = observer(() => {
-  const searchForm = query.local.searchForm;
   return (
     <div className="space-y-2">
       <Label layout="col">
@@ -120,9 +119,9 @@ const DescendantsForm = observer(() => {
           type="radio"
           name="descendants"
           value="all"
-          checked={searchForm.descendants === "all"}
+          checked={searchFrom.descendants === "all"}
           onChange={() => {
-            searchForm.descendants = "all";
+            searchFrom.descendants = "all";
           }}
         />
         <span>All</span>
@@ -132,9 +131,9 @@ const DescendantsForm = observer(() => {
           type="radio"
           name="descendants"
           value="direct"
-          checked={searchForm.descendants === "direct"}
+          checked={searchFrom.descendants === "direct"}
           onChange={() => {
-            searchForm.descendants = "direct";
+            searchFrom.descendants = "direct";
           }}
         />
         <span>Direct</span>

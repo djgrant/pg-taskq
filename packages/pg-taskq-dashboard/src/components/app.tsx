@@ -6,10 +6,9 @@ import { Tasks } from "./tasks";
 import { Logs } from "./logs";
 import { Info } from "./info";
 import { H1, Input } from "@djgrant/components";
-import * as loading from "./loading";
 
 export const App = () => (
-  <Suspense fallback={loading.fullscreen}>
+  <Suspense fallback={<span />}>
     <div className="h-screen">
       <header className="flex bg-blue-400">
         <div className="w-64 px-6 py-4 border-r-2 border-blue-500">
@@ -35,7 +34,7 @@ export const App = () => (
           <div className="mb-6 border-b border-gray-200">
             <TopTabs />
           </div>
-          <Suspense fallback={loading.text}>
+          <Suspense fallback={<span />}>
             <Router>
               <Tasks path="tasks/:taskId/tasks/:status" />
               <Info path="tasks/:taskId/info" />

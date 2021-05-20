@@ -1,16 +1,16 @@
 import React, { Suspense } from "react";
 import { RouteComponentProps } from "@reach/router";
-import { graphql, usePoll } from "@gqless/react";
-import { query } from "../graphql";
+import { useQuery } from "../gqless";
 import dayjs from "dayjs";
 
 type LogsProps = RouteComponentProps<{ taskId: string }>;
 
-export const LogsInner: React.FC<LogsProps> = graphql(({ taskId }) => {
+export const LogsInner: React.FC<LogsProps> = ({ taskId }) => {
+  const query = useQuery();
   const task = query.task({ id: taskId });
-  usePoll(task, 1000);
+  // usePoll(task, 1000);
 
-  const logs = task?.latestExecution?.logs;
+  const logs = task?.latestExecution?.logs();
 
   if (!logs || !logs[0]?.id) {
     return <div className="text-gray-700">No logs</div>;
@@ -31,7 +31,7 @@ export const LogsInner: React.FC<LogsProps> = graphql(({ taskId }) => {
       ))}
     </div>
   );
-});
+};
 
 export const Logs: React.FC<LogsProps> = (props) => (
   <Suspense fallback={<div className="text-gray-700">No logs</div>}>

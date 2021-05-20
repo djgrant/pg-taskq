@@ -1,18 +1,17 @@
 import React from "react";
 import { RouteComponentProps } from "@reach/router";
-import { graphql, usePoll } from "@gqless/react";
-import { query } from "../graphql";
+import { useQuery } from "../gqless";
 import { H6 } from "@djgrant/components";
 import dayjs from "dayjs";
 
 type InfoProps = RouteComponentProps<{ taskId: string }>;
 
-export const Info: React.FC<InfoProps> = graphql(({ taskId }) => {
-  console.log(typeof taskId);
+export const Info: React.FC<InfoProps> = ({ taskId }) => {
+  const query = useQuery();
   const task = query.task({ id: taskId });
-  usePoll(task, 5000);
+  // usePoll(task, 5000);
 
-  if (!task) return;
+  if (!task) return null;
 
   return (
     <div className="bg-gray-100 border rounded">
@@ -45,7 +44,7 @@ export const Info: React.FC<InfoProps> = graphql(({ taskId }) => {
       </DataRow>
     </div>
   );
-});
+};
 
 interface DataRowProps {
   label: string;
@@ -66,7 +65,7 @@ const DataRow: React.FC<DataRowProps> = ({ label, value, children, last }) => (
 );
 
 const createDebugTemplate = (
-  name: string,
+  name?: string,
   params?: {} | null,
   context?: {} | null
 ) => `taskq.debug("${name}", {

@@ -15,26 +15,6 @@ function localObservable<T>(key: string, defaultValue: T) {
   return observableValue;
 }
 
-export const Query = {
-  local: {
-    searchForm: localObservable("searchForm", { descendants: "direct" })
-  }
-};
-
-/**
- * Add a key to a type
- */
-// export const User = {
-//   [GET_KEY]: (user) => user.id
-// }
-
-/**
- * Add custom data to a type
- * @example
- * query.users[0].follow()
- */
-// export const User = (user) => ({
-//   follow() {
-//     console.log('follow', user.id)
-//   }
-// })
+export const searchFrom = localObservable("searchForm", {
+  descendants: "direct",
+});

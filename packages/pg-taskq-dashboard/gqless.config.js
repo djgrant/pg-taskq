@@ -1,8 +1,7 @@
-const isGenerate = process.env.npm_lifecycle_script.startsWith(
-  "gqless generate"
-);
-
 module.exports = {
-  url: isGenerate ? "http://localhost:3001/graphql" : "/graphql",
-  outputDir: "src/graphql"
+  introspection: {
+    endpoint: "http://localhost:3001/graphql",
+  },
+  destination: "./src/gqless/index.ts",
+  react: true,
 };
