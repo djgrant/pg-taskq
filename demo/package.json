@@ -1,7 +1,7 @@
 {
   "private": "true",
   "name": "demo",
-  "version": "1.0.0-alpha.33",
+  "version": "1.0.0-alpha.34",
   "scripts": {
     "start": "run-p server worker dashboard -l",
     "dashboard": "node dashboard",
@@ -10,7 +10,7 @@
   },
   "dependencies": {
     "@djgrant/pg-taskq": "^1.0.0-alpha.29",
-    "@djgrant/pg-taskq-dashboard": "^1.0.0-alpha.15",
+    "@djgrant/pg-taskq-dashboard": "^1.0.0-alpha.16",
     "@djgrant/pg-taskq-graphql": "^1.0.0-alpha.8",
     "@djgrant/pg-taskq-server": "^1.0.0-alpha.12",
     "express": "^4.17.1",
