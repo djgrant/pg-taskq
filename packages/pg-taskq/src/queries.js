@@ -99,6 +99,10 @@ const updateExecution = ({ status, executionId, taskId, maxAttempts }) => sql`
   );
 `;
 
+const cancelRunningTasks = ({ maxAttempts }) => sql`
+  SELECT cancel_running_tasks(${maxAttempts});
+`;
+
 const updateContext = ({ taskId, context }) => sql`
   UPDATE tasks 
   SET context = ${context}
@@ -125,6 +129,7 @@ module.exports = {
   insertTaskToExecuteAtDateTime,
   insertTaskToExecuteIn,
   insertTaskToExecuteInSumOf,
+  cancelRunningTasks,
   updateExecution,
   updateContext,
   insertLogs,

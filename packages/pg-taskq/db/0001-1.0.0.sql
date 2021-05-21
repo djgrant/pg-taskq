@@ -411,6 +411,29 @@ create function execute_task(task_id bigint) returns executions as $$
 $$ language sql volatile;
 
 
+-- cancel running tasks --
+
+create function cancel_running_tasks(max_attempts int) returns void as $$	
+declare 
+   task record;
+begin
+    for task in 
+			select t.id, e.id as execution_id from tasks t
+			inner join executions e
+			on e.task_id = t.id
+			where t.status = 'running' 
+		loop
+			perform update_execution_status(
+				'failure',
+				task.execution_id,
+				task.id,
+				max_attempts
+			);
+    end loop;
+end;	
+$$ language plpgsql volatile;
+
+
 -- task events --
 
 create function dispatch_task_event () returns trigger as $$

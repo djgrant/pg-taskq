@@ -558,6 +558,10 @@ class PgTaskQ {
   }
 
   async stop() {
+    await this.pool
+      .query(queries.cancelRunningTasks({ maxAttempts: this.maxAttempts }))
+      .catch(this.log("error"));
+
     if (this.started) {
       this.started = false;
       await this.processingPromise.catch(console.log);
