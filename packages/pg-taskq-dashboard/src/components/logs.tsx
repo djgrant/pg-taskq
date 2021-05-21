@@ -11,7 +11,7 @@ export const LogsInner: React.FC<LogsProps> = ({ taskId }) => {
     .task({ id: taskId })
     ?.latestExecution?.logs({ first: 5000 });
 
-  if (!logs || !logs[0].id) {
+  if (!logs || !logs.length) {
     return <div className="text-gray-700">No logs</div>;
   }
 
