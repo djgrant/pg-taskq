@@ -7,12 +7,11 @@ type LogsProps = RouteComponentProps<{ taskId: string }>;
 
 export const LogsInner: React.FC<LogsProps> = ({ taskId }) => {
   const query = useQuery();
-  const task = query.task({ id: taskId });
-  // usePoll(task, 1000);
+  const logs = query
+    .task({ id: taskId })
+    ?.latestExecution?.logs({ first: 5000 });
 
-  const logs = task?.latestExecution?.logs();
-
-  if (!logs || !logs[0]?.id) {
+  if (!logs || !logs[0].id) {
     return <div className="text-gray-700">No logs</div>;
   }
 
