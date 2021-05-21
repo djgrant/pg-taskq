@@ -255,15 +255,15 @@ $$ language sql stable;
 
 -- window functions --
 
-create function tasks_last_executed(t tasks) returns timestamptz as $$
-	select e.started_at
+create function tasks_finished_at(t tasks) returns timestamptz as $$
+	select e.finished_at
 	from executions e
 	where e.task_id = t.id
-	order by e.started_at desc
+	order by id desc
 	limit 1;
 $$ language sql stable;
 
-comment on function tasks_last_executed(tasks) is '@sortable';
+comment on function tasks_finished_at(tasks) is '@sortable';
 
 
 create function tasks_latest_execution (t tasks) returns executions as $$
@@ -378,12 +378,12 @@ begin
 	and t.locked = false 
 	and t.attempts < max_attempts
 	and (
-		tasks_last_executed(t) is null
+		tasks_finished_at(t) is null
 		or case when backoff_decay = 'exponential'
 		then
-			tasks_last_executed(t) + (backoff_delay * t.attempts * t.attempts) < now()
+			tasks_finished_at(t) + (backoff_delay * t.attempts * t.attempts) < now()
 		else
-			tasks_last_executed(t) + (backoff_delay * t.attempts) < now()
+			tasks_finished_at(t) + (backoff_delay * t.attempts) < now()
 		end
 	)
 	order by t.priority desc, t.execute_at asc
