@@ -23,6 +23,7 @@
   },
   "dependencies": {
     "@graphile-contrib/pg-simplify-inflector": "^6.0.0",
+    "graphile-utils": "^4.12.2",
     "indent-string": "^4.0.0",
     "postgraphile": "^4.7.0",
     "postgraphile-plugin-derived-field": "^1.0.0-alpha.7"
