@@ -280,6 +280,17 @@ end
 $$ language plpgsql stable;
 
 
+create function tasks_last_executed(t tasks) returns timestamptz as $$
+	select e.started_at
+	from executions e
+	where e.task_id = t.id
+	order by e.started_at desc
+	limit 1;
+$$ language sql stable;
+
+comment on function tasks_last_executed(tasks) is '@sortable';
+
+
 create function tasks_children_stats(t tasks) returns jsonb as $$
 	select to_jsonb(task_stats) - 'collection' - 'task_id' from task_stats 
 	where collection = 'children' and task_id = t.id;
