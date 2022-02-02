@@ -5,7 +5,10 @@ declare module "@djgrant/pg-taskq" {
     constructor(opts: Options<Deps>);
     start(): void;
     stop(): void;
-    take(taskName: string | string[], cb?: OnExecute<Deps>): Take<Deps>;
+    take(
+      taskName: string | RegExp | (string | RegExp)[],
+      cb?: OnExecute<Deps>
+    ): Take<Deps>;
     handler<Result, Params = any, Context = any>(
       cb: (ops: ExecuteParams<Deps, Params, Context>) => Result
     ): (opts: ExecuteParams<Deps, Params, Context>) => Result;
