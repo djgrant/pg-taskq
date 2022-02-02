@@ -388,8 +388,7 @@ begin
 	select * into next_task 
 	from tasks t
 	where (select count(*) from tasks where status = 'running') < concurrent_executions
-	and t.status != 'running'
-	and t.status != 'success'
+	and t.status ~ '^(pending|scheduled|failure|timeout)$'
 	and t.execute_at < now()
 	and t.locked = false 
 	and t.attempts < max_attempts
