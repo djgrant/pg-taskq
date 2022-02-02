@@ -18,6 +18,7 @@ declare module "@djgrant/pg-taskq" {
       params?: {};
       context?: {};
       priority?: number;
+      status?: string;
     }): Promise<void>;
     schedule(opts: {
       name: string;

@@ -169,3 +169,18 @@ test("priority is passed to child tasks", (done) => {
     done();
   });
 });
+
+test("custom status can be passed to task", async (done) => {
+  taskq.enqueue({
+    name: "ignored task",
+    status: "ignore",
+  });
+
+  taskq.take("ignored task", (self) => {
+    done(new Error("Should not been processed"));
+  });
+
+  await pause(50);
+
+  done();
+});

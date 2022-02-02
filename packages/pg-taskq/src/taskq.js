@@ -118,7 +118,7 @@ class PgTaskQ {
     const enqueueCopy = async (overrides) => {
       const parent = await getParent();
       const taskq = parent ? parent.taskq : this;
-      return taskq.enqueue({ ...task, ...overrides });
+      return taskq.enqueue({ ...task, status: null, ...overrides });
     };
 
     const params = {
@@ -340,6 +340,7 @@ class PgTaskQ {
           context: task.context || this.parentTask?.context,
           priority: task.priority || this.parentTask?.priority,
           parentId: task.parentId || (this.parentTask && this.parentTask.id),
+          status: task.status,
         })
       )
       .then((result) => result.rows[0]);

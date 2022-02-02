@@ -54,9 +54,10 @@ const insertTaskToExecuteAtDateTime = ({
   params = {},
   context = {},
   priority = 0,
+  status = null,
 }) => sql`
-    INSERT INTO tasks (name, params, context, parent_id, execute_at, priority) 
-    VALUES (${name}, ${params}, ${context}, ${parentId}, ${executeAtDateTime}, ${priority})
+    INSERT INTO tasks (name, params, context, parent_id, execute_at, status, priority) 
+    VALUES (${name}, ${params}, ${context}, ${parentId}, ${executeAtDateTime}, ${status}, ${priority})
     ON CONFLICT (name, execute_at, md5(params::text), md5(context::text)) DO NOTHING
     RETURNING *;
 `;
@@ -68,9 +69,10 @@ const insertTaskToExecuteIn = ({
   params = {},
   context = {},
   priority = 0,
+  status = null,
 }) => sql`
-    INSERT INTO tasks (name, params, context, parent_id, execute_at, priority) 
-    VALUES (${name}, ${params}, ${context}, ${parentId}, now() + ${executeIn}::interval, ${priority})
+    INSERT INTO tasks (name, params, context, parent_id, execute_at, status, priority) 
+    VALUES (${name}, ${params}, ${context}, ${parentId}, now() + ${executeIn}::interval, ${status}, ${priority})
     ON CONFLICT (name, execute_at, md5(params::text), md5(context::text)) DO NOTHING
     RETURNING *;
 `;
@@ -82,9 +84,10 @@ const insertTaskToExecuteInSumOf = ({
   params = {},
   context = {},
   priority = 0,
+  status = null,
 }) => sql`
-    INSERT INTO tasks (name, params, context, parent_id, execute_at, priority) 
-    VALUES (${name}, ${params}, ${context}, ${parentId}, ${datetime}::timestamp with time zone + ${interval}::interval, ${priority})
+    INSERT INTO tasks (name, params, context, parent_id, execute_at, status, priority) 
+    VALUES (${name}, ${params}, ${context}, ${parentId}, ${datetime}::timestamp with time zone + ${interval}::interval, ${status}, ${priority})
     ON CONFLICT (name, execute_at, md5(params::text), md5(context::text)) DO NOTHING
     RETURNING *;
 `;

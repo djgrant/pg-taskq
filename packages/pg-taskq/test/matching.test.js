@@ -16,13 +16,13 @@ test("matches regular expressions", (done) => {
   taskq.take(/execution$/, () => done());
 });
 
-test("matches strings exactly", (done) => {
+test("matches strings exactly", async (done) => {
   taskq.enqueue("Test execution");
   taskq.take("execution", () => {
     done(new Error("Should not have matched"));
   });
 
-  pause(100);
+  await pause(50);
 
   taskq.enqueue("Test execution");
   taskq.take("Test execution", () => {
