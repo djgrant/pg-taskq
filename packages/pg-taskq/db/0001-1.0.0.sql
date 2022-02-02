@@ -79,7 +79,7 @@ for each row execute procedure on_before_task_insert();
 
 -- computed task status/attempts --
 
-create function on_execution_status_change() returns trigger as $$
+create or replace function on_execution_status_change() returns trigger as $$
 declare
 	task tasks;
 	latest_execution executions;
@@ -118,7 +118,7 @@ create trigger execution_updated
 
 -- computed task stats --
 
-create function on_task_change () returns trigger as $$ 
+create or replace function on_task_change () returns trigger as $$ 
 declare
 	old_row tasks;
 begin
@@ -137,7 +137,7 @@ end
 $$ language plpgsql volatile;
 
 
-create function update_stats (
+create or replace function update_stats (
 	op varchar, 
 	arg varchar, 
 	old tasks,
@@ -201,7 +201,7 @@ create trigger task_unlocked
 
 -- search functions --
 
-create function descendant_tasks(task_id bigint) returns setof tasks as $$
+create or replace function descendant_tasks(task_id bigint) returns setof tasks as $$
 	with recursive child_tasks as (
 		select * from tasks
 			where case when $1 is null 
@@ -219,7 +219,7 @@ $$ language sql stable;
 comment on function descendant_tasks(bigint) is e'@sortable\n@filterable';
 
 
-create function child_tasks(task_id bigint) returns setof tasks as $$
+create or replace function child_tasks(task_id bigint) returns setof tasks as $$
 	select * from tasks
 	where case when $1 is null 
 	then 
@@ -232,7 +232,7 @@ $$ language sql stable;
 comment on function child_tasks(bigint) is e'@sortable\n@filterable';
 
 
-create function root_descendants_stats() returns jsonb as $$
+create or replace function root_descendants_stats() returns jsonb as $$
 	select jsonb_build_object( 
 		'success', (select count(*) from tasks where status = 'success'),
 		'failure', (select count(*) from tasks where status = 'failure'),
@@ -245,7 +245,7 @@ create function root_descendants_stats() returns jsonb as $$
 $$ language sql stable;
 
 
-create function root_children_stats() returns jsonb as $$
+create or replace function root_children_stats() returns jsonb as $$
 	select jsonb_build_object( 
 		'success', (select count(*) from tasks where status = 'success' and parent_id is null),
 		'failure', (select count(*) from tasks where status = 'failure' and parent_id is null),
@@ -260,7 +260,7 @@ $$ language sql stable;
 
 -- window functions --
 
-create function tasks_finished_at(t tasks) returns timestamptz as $$
+create or replace function tasks_finished_at(t tasks) returns timestamptz as $$
 	select e.finished_at
 	from executions e
 	where e.task_id = t.id
@@ -271,7 +271,7 @@ $$ language sql stable;
 comment on function tasks_finished_at(tasks) is '@sortable';
 
 
-create function tasks_latest_execution (t tasks) returns executions as $$
+create or replace function tasks_latest_execution (t tasks) returns executions as $$
 declare
 	latest_execution executions;
 begin
@@ -285,7 +285,7 @@ end
 $$ language plpgsql stable;
 
 
-create function tasks_last_executed(t tasks) returns timestamptz as $$
+create or replace function tasks_last_executed(t tasks) returns timestamptz as $$
 	select e.started_at
 	from executions e
 	where e.task_id = t.id
@@ -296,33 +296,33 @@ $$ language sql stable;
 comment on function tasks_last_executed(tasks) is '@sortable';
 
 
-create function tasks_children_stats(t tasks) returns jsonb as $$
+create or replace function tasks_children_stats(t tasks) returns jsonb as $$
 	select to_jsonb(task_stats) - 'collection' - 'task_id' from task_stats 
 	where collection = 'children' and task_id = t.id;
 $$ 
 language sql stable;
 
 
-create function tasks_descendants_stats(t tasks) returns jsonb as $$
+create or replace function tasks_descendants_stats(t tasks) returns jsonb as $$
 	select to_jsonb(task_stats) - 'collection' - 'task_id' from task_stats 
 	where collection = 'descendants' and task_id = t.id;
 $$ 
 language sql stable;
 
 
-create function tasks_descendant_tasks(t tasks) returns setof tasks as $$
+create or replace function tasks_descendant_tasks(t tasks) returns setof tasks as $$
 	select * from descendant_tasks(t.id)
 $$ 
 language sql stable;
 
 
-create function executions_duration(e executions) returns text as $$
+create or replace function executions_duration(e executions) returns text as $$
 	select to_char(coalesce(e.finished_at, now()) - e.started_at, 'HH24:MI:SS.MS');
 $$ 
 language sql stable;
 
 
-create function tasks_complete(t tasks) returns boolean as $$
+create or replace function tasks_complete(t tasks) returns boolean as $$
 	select exists (
 		select true from tasks
 		inner join task_stats on tasks.id = task_stats.task_id 
@@ -336,7 +336,7 @@ language sql stable;
 
 -- mutation functions --
 
-create function update_execution_status(
+create or replace function update_execution_status(
 	new_status varchar, 
 	execution_id bigint, 
 	task_id bigint, 
@@ -372,7 +372,7 @@ $$ language plpgsql volatile;
 
 -- process task queue --
 
-create function process_next_task(
+create or replace function process_next_task(
 	backoff_decay varchar,
 	backoff_delay interval,
 	concurrent_executions integer,
@@ -422,14 +422,14 @@ $$ language plpgsql volatile;
 
 -- force execute --
 
-create function execute_task(task_id bigint) returns executions as $$
+create or replace function execute_task(task_id bigint) returns executions as $$
 	insert into executions (task_id) values (task_id) returning *;
 $$ language sql volatile;
 
 
 -- cancel running tasks --
 
-create function cancel_running_tasks(max_attempts int) returns void as $$	
+create or replace function cancel_running_tasks(max_attempts int) returns void as $$	
 declare 
    task record;
 begin
@@ -452,7 +452,7 @@ $$ language plpgsql volatile;
 
 -- task events --
 
-create function dispatch_task_event () returns trigger as $$
+create or replace function dispatch_task_event () returns trigger as $$
 declare
 	event_type varchar := tg_argv[0];
 	payload jsonb;
@@ -516,7 +516,7 @@ create trigger task_event_4_completed
 
 -- utility functions -- 
 
-create function inc_task_stat (
+create or replace function inc_task_stat (
 	task_id bigint, 
 	collection varchar, 
 	col_name varchar, 
