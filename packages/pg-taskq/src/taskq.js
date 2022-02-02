@@ -38,6 +38,13 @@ class PgTaskQ {
     }
   }
 
+  static matchTaskName(matcher, name) {
+    if (matcher instanceof RegExp) {
+      return matcher.test(name);
+    }
+    return matcher === name;
+  }
+
   on(event, subscriber) {
     this.subscribers.push([event, subscriber]);
   }
@@ -169,31 +176,31 @@ class PgTaskQ {
       });
 
       this.on("timeout", (params) => {
-        if (taskName !== params.task.name) return;
+        if (!PgTaskQ.matchTaskName(taskName, params.task.name)) return;
         if (typeof take.onTimeoutCallback !== "function") return;
         withErrorHandler(take.onTimeoutCallback)(withoutFootguns(params));
       });
 
       this.on("locked", (params) => {
-        if (taskName !== params.task.name) return;
+        if (!PgTaskQ.matchTaskName(taskName, params.task.name)) return;
         if (typeof take.onLockedCallback !== "function") return;
         withErrorHandler(take.onLockedCallback)(withoutFootguns(params));
       });
 
       this.on("failure", (params) => {
-        if (taskName !== params.task.name) return;
+        if (!PgTaskQ.matchTaskName(taskName, params.task.name)) return;
         if (typeof take.onFailureCallback !== "function") return;
         withErrorHandler(take.onFailureCallback)(withoutFootguns(params));
       });
 
       this.on("success", (params) => {
-        if (taskName !== params.task.name) return;
+        if (!PgTaskQ.matchTaskName(taskName, params.task.name)) return;
         if (typeof take.onSuccessCallback !== "function") return;
         withErrorHandler(take.onSuccessCallback)(withoutFootguns(params));
       });
 
       this.on("complete", async (params) => {
-        if (taskName !== params.task.name) return;
+        if (!PgTaskQ.matchTaskName(taskName, params.task.name)) return;
         if (typeof take.onBeforeCompleteCallback === "function") {
           // this is the moment to decomplete a task before onComplete is called
           // but not a good moment to enqueue a copy of itself as we can't stop
@@ -212,7 +219,7 @@ class PgTaskQ {
 
       this.on("running", async (params) => {
         const onExecuteCallback = takeCallback || take.onExecuteCallback;
-        if (taskName !== params.task.name) return;
+        if (!PgTaskQ.matchTaskName(taskName, params.task.name)) return;
         if (typeof onExecuteCallback !== "function") {
           this.log("error", "You must provide a callback to `taskq.take`");
         }
@@ -449,7 +456,9 @@ class PgTaskQ {
 
       if (
         nextTask &&
-        !this.registeredTasks.find(({ name }) => name === nextTask.task_name)
+        !this.registeredTasks.find(({ name }) =>
+          PgTaskQ.matchTaskName(name, nextTask.task_name)
+        )
       ) {
         this.log(
           "error",
