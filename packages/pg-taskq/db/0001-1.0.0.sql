@@ -58,14 +58,15 @@ create index on logs (execution_id, time);
 
 -- default task status --
 
-create function on_before_task_insert() returns trigger as $$
+create or replace function on_before_task_insert() returns trigger as $$
 begin
 	if new.id = new.parent_id then
 		raise exception 'A task cannot reference itself as its parent';
 	end if;
 	if new.execute_at > now() then
 		new.status = 'scheduled';
-	else
+	end if;
+	if new.status is null then
 		new.status = 'pending';
 	end if;
 	return new;
@@ -146,6 +147,10 @@ create function update_stats (
 ) 
 returns void as $$
 begin
+	if new.status !~ '^(scheduled|pending|running|failure|timeout|success|locked)$' then
+		return;
+	end if;
+
 	if op = 'INSERT' then
 		perform inc_task_stat(new.parent_id, collection, 'total', 1);
 	end if;
@@ -343,7 +348,7 @@ declare
 	current_attempts integer;
 begin
 	if new_status not in ('success', 'timeout', 'failure') then
-		raise exception 'An exectution status should only be updated to success, timeout or failure – got %', new_status;
+		raise exception 'An exectution status should only be updated to success, timeout or failure - got %', new_status;
 	end if;
 
 	update executions 
