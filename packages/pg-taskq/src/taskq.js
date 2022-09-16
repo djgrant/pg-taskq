@@ -153,13 +153,15 @@ class PgTaskQ {
 
     const take = new Take();
 
-    const withErrorHandler = (cb) => async (...args) => {
-      try {
-        await cb(...args);
-      } catch (err) {
-        this.log("error", err);
-      }
-    };
+    const withErrorHandler =
+      (cb) =>
+      async (...args) => {
+        try {
+          await cb(...args);
+        } catch (err) {
+          this.log("error", err);
+        }
+      };
 
     // methods that could cause infinite loops or adding nodes to a completed task
     const withoutFootguns = (params) => {
@@ -287,6 +289,7 @@ class PgTaskQ {
       params: originalTask.params,
       context: originalTask.context,
       parentId: originalTask.parent_id,
+      priority: originalTask.priority,
       executeInSumOf: overrides.add && {
         datetime: originalTask.execute_at,
         interval: overrides.add,
